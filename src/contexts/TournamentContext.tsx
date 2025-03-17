@@ -62,34 +62,30 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Update the next match if applicable
       if (match.nextMatchId) {
         // Find the next match
-        let nextMatchFound = false;
         for (const round of newData.rounds) {
           const nextMatch = round.matches.find(m => m.id === match.nextMatchId);
           if (nextMatch) {
-            // Special handling for the third round's last match (position 2)
-            if (prev.currentRound === 2 && match.position === 2) {
-              // For the special match, always assign to teamB of the next match
-              nextMatch.teamB = winner;
-            } else {
-              // Normal case: determine if this should be teamA or teamB based on position
-              const isEvenPosition = match.position % 2 === 0;
-              if (isEvenPosition) {
-                nextMatch.teamA = winner;
+            // Determine if this should be teamA or teamB in the next match based on side and position
+            if (match.side === 'left') {
+              // Left side matches
+              if (prev.currentRound === 1 && match.position === 2) {
+                // Special handling for the third match in second round (left side)
+                nextMatch.teamA = winner; // Goes to the wildcard match
               } else {
-                nextMatch.teamB = winner;
+                const isEvenPosition = match.position % 2 === 0;
+                nextMatch.teamA = isEvenPosition ? winner : nextMatch.teamA;
+                nextMatch.teamB = !isEvenPosition ? winner : nextMatch.teamB;
               }
+            } else if (match.side === 'right') {
+              // Right side matches
+              const isEvenPosition = (match.position - 5) % 2 === 0; // Adjusted for right side
+              nextMatch.teamA = isEvenPosition ? winner : nextMatch.teamA;
+              nextMatch.teamB = !isEvenPosition ? winner : nextMatch.teamB;
+            } else if (match.side === 'center') {
+              // For the wildcard match, winner goes to semi-final as teamB
+              nextMatch.teamB = winner;
             }
-            nextMatchFound = true;
             break;
-          }
-        }
-
-        // Special handling for second round (5 matches) to third round (3 matches)
-        if (prev.currentRound === 1 && match.position === 4) {
-          // The 5th winner goes directly to the special match in round 3
-          const specialMatch = newData.rounds[2].matches[2]; // The special match at position 2
-          if (specialMatch) {
-            specialMatch.teamA = winner;
           }
         }
       }

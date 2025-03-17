@@ -45,7 +45,8 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     key={match.id}
                     className="relative"
                     style={{
-                      marginBottom: getSpacingForMatch(round.id, match.position, tournamentData.rounds.length)
+                      marginBottom: getSpacingForMatch(round.id, match.position, match.side),
+                      marginTop: getTopMarginForMatch(round.id, match.position, match.side)
                     }}
                   >
                     <MatchCard
@@ -53,7 +54,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                       onSelectWinner={onSelectWinner}
                       isActive={activeMatches.includes(match.id)}
                     />
-                    {renderConnectingLines(match, round.id, tournamentData.rounds.length)}
+                    {renderConnectingLines(match, round.id, match.side)}
                   </div>
                 ))}
               </div>
@@ -66,13 +67,13 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 };
 
 // Helper function to get the vertical spacing between matches in a round
-function getSpacingForMatch(roundId: number, position: number, totalRounds: number): string {
+function getSpacingForMatch(roundId: number, position: number, side?: string): string {
   // First round has consistent spacing
   if (roundId === 0) return '12px';
   
-  // Special handling for the third round's last match (the special match)
+  // Special handling for the wildcard match
   if (roundId === 2 && position === 2) {
-    return '80px'; // Give more space for the special match
+    return '40px'; // Give appropriate space for the wildcard match
   }
   
   // Calculate spacing based on round number
@@ -81,13 +82,32 @@ function getSpacingForMatch(roundId: number, position: number, totalRounds: numb
   return `${baseSpacing * multiplier}px`;
 }
 
+// Helper function to get additional top margin for specific matches
+function getTopMarginForMatch(roundId: number, position: number, side?: string): string {
+  // Special handling for the wildcard match
+  if (roundId === 2 && position === 2) {
+    return '60px'; // Position the wildcard match vertically centered
+  }
+  
+  // For the semi-final and final rounds
+  if (roundId === 3) {
+    return '40px'; // Give space for the semi-final
+  }
+  
+  if (roundId === 4) {
+    return '40px'; // Position the final match nicely
+  }
+  
+  return '0px';
+}
+
 // Helper function to get the top margin for a round
 function getMarginForRound(roundId: number, totalRounds: number): string {
   if (roundId === 0) return '0px';
   
   // Special handling for the champion display
   if (roundId === totalRounds - 1) {
-    return '80px'; // Position the champion display nicely
+    return '120px'; // Position the champion display nicely
   }
   
   // First round has no margin, subsequent rounds increase
@@ -96,9 +116,33 @@ function getMarginForRound(roundId: number, totalRounds: number): string {
 }
 
 // Helper function to render connecting lines between matches
-function renderConnectingLines(match: Match, roundId: number, totalRounds: number) {
+function renderConnectingLines(match: Match, roundId: number, side?: string) {
   // Don't render lines for the first round
   if (roundId === 0) return null;
+  
+  // Special handling for center matches
+  if (side === 'center') {
+    return (
+      <div className="tournament-lines">
+        <div 
+          className="tournament-line-horizontal"
+          style={{
+            top: '50%',
+            right: '100%',
+            width: '8px'
+          }}
+        />
+        <div 
+          className="tournament-line-horizontal"
+          style={{
+            top: '50%',
+            left: '100%',
+            width: '8px'
+          }}
+        />
+      </div>
+    );
+  }
   
   return (
     <div className="tournament-lines">
@@ -107,7 +151,9 @@ function renderConnectingLines(match: Match, roundId: number, totalRounds: numbe
         className="tournament-line"
         style={{
           top: '50%',
-          right: '100%',
+          right: side === 'left' ? '100%' : 'auto',
+          left: side === 'right' ? '100%' : 'auto',
+          width: '8px'
         }}
       />
       
@@ -117,7 +163,8 @@ function renderConnectingLines(match: Match, roundId: number, totalRounds: numbe
           className="tournament-vertical-line"
           style={{
             top: '-50%',
-            left: '-8px',
+            left: side === 'left' ? '-8px' : 'auto',
+            right: side === 'right' ? '-8px' : 'auto',
             height: '100%',
           }}
         />
