@@ -7,7 +7,7 @@ import WinnerDisplay from '@/components/WinnerDisplay';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { toast } from "sonner";
 
 const Index = () => {
   const [stage, setStage] = useState<TournamentStage>(TournamentStage.SETUP);

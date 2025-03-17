@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import TeamInput from './TeamInput';
 import { AlertTriangle, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/ui/sonner';
+import { toast } from "sonner";
 
 const SetupScreen: React.FC<SetupScreenProps> = ({ onStartTournament }) => {
   const [teams, setTeams] = useState<Team[]>(
