@@ -45,7 +45,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     key={match.id}
                     className="relative"
                     style={{
-                      marginBottom: getSpacingForMatch(round.id, tournamentData.rounds.length)
+                      marginBottom: getSpacingForMatch(round.id, match.position, tournamentData.rounds.length)
                     }}
                   >
                     <MatchCard
@@ -66,9 +66,14 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 };
 
 // Helper function to get the vertical spacing between matches in a round
-function getSpacingForMatch(roundId: number, totalRounds: number): string {
-  // First round has no spacing
+function getSpacingForMatch(roundId: number, position: number, totalRounds: number): string {
+  // First round has consistent spacing
   if (roundId === 0) return '12px';
+  
+  // Special handling for the third round's last match (the special match)
+  if (roundId === 2 && position === 2) {
+    return '80px'; // Give more space for the special match
+  }
   
   // Calculate spacing based on round number
   const baseSpacing = 24;
@@ -79,6 +84,11 @@ function getSpacingForMatch(roundId: number, totalRounds: number): string {
 // Helper function to get the top margin for a round
 function getMarginForRound(roundId: number, totalRounds: number): string {
   if (roundId === 0) return '0px';
+  
+  // Special handling for the champion display
+  if (roundId === totalRounds - 1) {
+    return '80px'; // Position the champion display nicely
+  }
   
   // First round has no margin, subsequent rounds increase
   const spacing = 30 * Math.pow(2, roundId - 1);

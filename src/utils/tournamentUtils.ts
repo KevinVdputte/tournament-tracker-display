@@ -39,16 +39,24 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
     matches: secondRoundMatches
   });
 
-  // Third round (2 matches + 1 remainder)
+  // Third round (2 matches + 1 special match for 5th winner)
   const thirdRoundMatches: Match[] = [];
-  for (let i = 0; i < 3; i++) {
+  // First two matches get winners from previous round (4 teams)
+  for (let i = 0; i < 2; i++) {
     thirdRoundMatches.push({
       id: `match-3-${i}`,
       round: 2,
       position: i,
-      nextMatchId: i < 2 ? `match-4-0` : undefined
+      nextMatchId: `match-4-0`
     });
   }
+  // Special match for the last (5th) winner from second round
+  thirdRoundMatches.push({
+    id: `match-3-2`,
+    round: 2,
+    position: 2,
+    nextMatchId: `match-4-0`
+  });
   rounds.push({
     id: 2,
     name: 'Quarter Finals',

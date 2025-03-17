@@ -62,17 +62,34 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Update the next match if applicable
       if (match.nextMatchId) {
         // Find the next match
+        let nextMatchFound = false;
         for (const round of newData.rounds) {
           const nextMatch = round.matches.find(m => m.id === match.nextMatchId);
           if (nextMatch) {
-            // Determine if this should be teamA or teamB in the next match
-            const isEvenPosition = match.position % 2 === 0;
-            if (isEvenPosition) {
-              nextMatch.teamA = winner;
-            } else {
+            // Special handling for the third round's last match (position 2)
+            if (prev.currentRound === 2 && match.position === 2) {
+              // For the special match, always assign to teamB of the next match
               nextMatch.teamB = winner;
+            } else {
+              // Normal case: determine if this should be teamA or teamB based on position
+              const isEvenPosition = match.position % 2 === 0;
+              if (isEvenPosition) {
+                nextMatch.teamA = winner;
+              } else {
+                nextMatch.teamB = winner;
+              }
             }
+            nextMatchFound = true;
             break;
+          }
+        }
+
+        // Special handling for second round (5 matches) to third round (3 matches)
+        if (prev.currentRound === 1 && match.position === 4) {
+          // The 5th winner goes directly to the special match in round 3
+          const specialMatch = newData.rounds[2].matches[2]; // The special match at position 2
+          if (specialMatch) {
+            specialMatch.teamA = winner;
           }
         }
       }
