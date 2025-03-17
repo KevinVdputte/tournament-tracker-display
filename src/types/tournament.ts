@@ -1,4 +1,3 @@
-
 export interface Team {
   id: string;
   name: string;
@@ -12,6 +11,7 @@ export interface Match {
   teamB?: Team;
   winner?: Team;
   nextMatchId?: string;
+  side?: 'left' | 'right' | 'center'; // Added this property
 }
 
 export interface Round {
