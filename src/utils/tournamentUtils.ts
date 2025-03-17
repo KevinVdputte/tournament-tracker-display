@@ -14,22 +14,22 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
       id: `match-1-${i}`,
       round: 0,
       position: i,
-      teamA: teams[i],
-      teamB: teams[i + 5],
+      teamA: teams[i * 2],
+      teamB: teams[i * 2 + 1],
       nextMatchId: `match-2-${Math.floor(i / 2)}`,
       side: 'left'
     });
   }
   
   // Right side of the bracket (last 5 matches)
-  for (let i = 5; i < 10; i++) {
+  for (let i = 0; i < 5; i++) {
     firstRoundMatches.push({
-      id: `match-1-${i}`,
+      id: `match-1-${i + 5}`,
       round: 0,
-      position: i,
-      teamA: teams[i + 5],
-      teamB: teams[i + 10],
-      nextMatchId: `match-2-${Math.floor((i - 5) / 2) + 3}`,
+      position: i + 5,
+      teamA: teams[i * 2 + 10],
+      teamB: teams[i * 2 + 11],
+      nextMatchId: `match-2-${Math.floor(i / 2) + 3}`,
       side: 'right'
     });
   }
@@ -40,27 +40,27 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
     matches: firstRoundMatches
   });
 
-  // Second round (5 matches)
+  // Second round (6 matches - 3 on each side)
   const secondRoundMatches: Match[] = [];
   
-  // Left side (2 matches)
+  // Left side (3 matches)
   for (let i = 0; i < 3; i++) {
     secondRoundMatches.push({
       id: `match-2-${i}`,
       round: 1,
       position: i,
-      nextMatchId: i < 2 ? `match-3-0` : `match-3-2`, // First two go to first quarter, third to wildcard
+      nextMatchId: i < 2 ? `match-3-0` : `match-3-1`,
       side: 'left'
     });
   }
   
-  // Right side (2 matches)
-  for (let i = 3; i < 5; i++) {
+  // Right side (3 matches)
+  for (let i = 0; i < 3; i++) {
     secondRoundMatches.push({
-      id: `match-2-${i}`,
+      id: `match-2-${i + 3}`,
       round: 1,
-      position: i,
-      nextMatchId: `match-3-1`, // Both go to second quarter
+      position: i + 3,
+      nextMatchId: i < 2 ? `match-3-2` : `match-3-3`,
       side: 'right'
     });
   }
@@ -71,10 +71,10 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
     matches: secondRoundMatches
   });
 
-  // Third round (3 matches - 2 quarters + 1 wildcard)
+  // Third round (4 matches - 2 on each side)
   const thirdRoundMatches: Match[] = [];
   
-  // Left quarter-final
+  // Left quarter-finals
   thirdRoundMatches.push({
     id: `match-3-0`,
     round: 2,
@@ -83,22 +83,29 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
     side: 'left'
   });
   
-  // Right quarter-final
   thirdRoundMatches.push({
     id: `match-3-1`,
     round: 2,
     position: 1,
     nextMatchId: `match-4-0`,
-    side: 'right'
+    side: 'left'
   });
   
-  // Wildcard match (center position)
+  // Right quarter-finals
   thirdRoundMatches.push({
     id: `match-3-2`,
     round: 2,
     position: 2,
-    nextMatchId: `match-4-0`,
-    side: 'center'
+    nextMatchId: `match-4-1`,
+    side: 'right'
+  });
+  
+  thirdRoundMatches.push({
+    id: `match-3-3`,
+    round: 2,
+    position: 3,
+    nextMatchId: `match-4-1`,
+    side: 'right'
   });
   
   rounds.push({
@@ -107,16 +114,24 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
     matches: thirdRoundMatches
   });
 
-  // Fourth round (1 match - semifinal)
+  // Fourth round (2 matches - semifinals)
   const fourthRoundMatches: Match[] = [
     {
       id: 'match-4-0',
       round: 3,
       position: 0,
       nextMatchId: 'match-5-0',
-      side: 'center'
+      side: 'left'
+    },
+    {
+      id: 'match-4-1',
+      round: 3,
+      position: 1,
+      nextMatchId: 'match-5-0',
+      side: 'right'
     }
   ];
+  
   rounds.push({
     id: 3,
     name: 'Semi Finals',
@@ -132,6 +147,7 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
       side: 'center'
     }
   ];
+  
   rounds.push({
     id: 4,
     name: 'Final',
