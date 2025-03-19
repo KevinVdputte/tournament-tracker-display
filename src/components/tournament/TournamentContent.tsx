@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { TournamentStage } from '@/types/tournament';
 import SetupScreen from '@/components/SetupScreen';
 import TournamentBracket from '@/components/TournamentBracket';
-import WinnerDisplay from '@/components/WinnerDisplay';
 import { useTournament } from '@/contexts/TournamentContext';
 
 const TournamentContent: React.FC = () => {
@@ -37,16 +36,10 @@ const TournamentContent: React.FC = () => {
       )}
       
       {stage === TournamentStage.COMPLETE && tournamentData?.champion && (
-        <>
-          <TournamentBracket 
-            tournamentData={tournamentData}
-            onSelectWinner={handleSelectWinner}
-          />
-          <WinnerDisplay
-            champion={tournamentData.champion}
-            onReset={handleReset}
-          />
-        </>
+        <TournamentBracket 
+          tournamentData={tournamentData}
+          onSelectWinner={handleSelectWinner}
+        />
       )}
     </>
   );

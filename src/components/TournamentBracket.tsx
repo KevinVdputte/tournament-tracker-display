@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TournamentBracketProps, Match, Team } from '@/types/tournament';
 import MatchCard from './MatchCard';
 import RoundHeader from './RoundHeader';
-import { Trophy } from 'lucide-react';
+import { Trophy, Medal } from 'lucide-react';
 
 const TournamentBracket: React.FC<TournamentBracketProps> = ({
   tournamentData,
@@ -10,6 +10,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 }) => {
   const [activeMatches, setActiveMatches] = useState<string[]>([]);
   const [localFinalTeams, setLocalFinalTeams] = useState<{teamA?: Team, teamB?: Team} | null>(null);
+  const [thirdPlaceMatch, setThirdPlaceMatch] = useState<Match | null>(null);
 
   // Determine active matches whenever the tournament data changes
   useEffect(() => {
@@ -47,6 +48,21 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       }
     }
     
+    // Add 3rd place match to active matches if it exists and has no winner
+    if (thirdPlaceMatch && thirdPlaceMatch.teamA && thirdPlaceMatch.teamB && !thirdPlaceMatch.winner) {
+      if (!newActiveMatches.includes(thirdPlaceMatch.id)) {
+        newActiveMatches.push(thirdPlaceMatch.id);
+      }
+      console.log("Adding 3rd place match to active matches:", thirdPlaceMatch.id);
+    }
+    
+    // Add 3rd place match to completed matches if it has a winner
+    if (thirdPlaceMatch && thirdPlaceMatch.winner) {
+      if (!completedMatches.includes(thirdPlaceMatch.id)) {
+        completedMatches.push(thirdPlaceMatch.id);
+      }
+    }
+    
     // Log current state for debugging
     console.log("Current round:", tournamentData.currentRound);
     console.log("Active matches:", newActiveMatches);
@@ -54,9 +70,10 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     
     // Combine active matches and completed matches that can be reverted
     setActiveMatches([...newActiveMatches, ...completedMatches]);
-  }, [tournamentData]);
+  }, [tournamentData, thirdPlaceMatch]);
 
   // Check for semifinal winners and update the final match if needed
+  // Also create or update the third place match for semifinal losers
   useEffect(() => {
     // Find the semifinal matches
     const semifinalRound = tournamentData.rounds.find(r => r.id === 2);
@@ -89,6 +106,33 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       } else {
         // If the final match already has teams set, clear our local state
         setLocalFinalTeams(null);
+      }
+      
+      // If both semifinals have winners, determine the losers for 3rd place match
+      const leftLoser = leftSemifinal.winner?.id === leftSemifinal.teamA?.id 
+        ? leftSemifinal.teamB 
+        : leftSemifinal.teamA;
+        
+      const rightLoser = rightSemifinal.winner?.id === rightSemifinal.teamA?.id
+        ? rightSemifinal.teamB
+        : rightSemifinal.teamA;
+        
+      if (leftLoser && rightLoser) {
+        console.log("Setting up third place match with semifinal losers:", {
+          teamA: leftLoser.name,
+          teamB: rightLoser.name
+        });
+        
+        // Create or update third place match
+        setThirdPlaceMatch({
+          id: 'match-3rd-place',
+          round: 3, // Same round as finals
+          position: 1, // Below the final match
+          teamA: leftLoser,
+          teamB: rightLoser,
+          winner: undefined, // Reset winner if match is being updated
+          side: 'center'
+        });
       }
     }
   }, [tournamentData]);
@@ -214,6 +258,17 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       } : 'No matches'
     });
   });
+
+  // Check if 3rd place match has been created
+  if (thirdPlaceMatch) {
+    console.log("Third place match:", {
+      id: thirdPlaceMatch.id,
+      teamA: thirdPlaceMatch.teamA?.name || 'None',
+      teamB: thirdPlaceMatch.teamB?.name || 'None',
+      winner: thirdPlaceMatch.winner?.name || 'None',
+      isActive: activeMatches.includes(thirdPlaceMatch.id)
+    });
+  }
 
   return (
     <div className="w-full overflow-x-auto py-6">
@@ -402,10 +457,48 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
           })()}
         </div>
         
-        {/* Champion Display */}
-        <div className="flex justify-center mt-[-150px]">
-          <div className="text-center">
-            <div className="glass-panel shadow-lg p-4 rounded-lg mb-6 relative z-10">
+        {/* Bottom Tournament Results Section - Positioned higher over the grid */}
+        <div className="relative" style={{ marginTop: '-300px' }}>
+          {/* 3rd Place Match */}
+          {thirdPlaceMatch && thirdPlaceMatch.teamA && thirdPlaceMatch.teamB && (
+            <div className="flex justify-center mb-3">
+              <div className="text-center w-[320px]">
+                <div className="text-xs text-muted-foreground mb-1">3rd Place Match</div>
+                <div className="relative" style={{ transform: 'scale(0.85)' }}>
+                  <MatchCard
+                    match={thirdPlaceMatch}
+                    onSelectWinner={(matchId, winnerId) => {
+                      console.log("3rd place match selection:", { matchId, winnerId });
+                      onSelectWinner(matchId, winnerId);
+                      
+                      // Update local state to maintain interactivity when winner is selected
+                      if (thirdPlaceMatch && winnerId !== 'revert') {
+                        const winner = winnerId === thirdPlaceMatch.teamA?.id 
+                          ? thirdPlaceMatch.teamA 
+                          : thirdPlaceMatch.teamB;
+                        
+                        setThirdPlaceMatch({
+                          ...thirdPlaceMatch,
+                          winner: winner
+                        });
+                      } else if (thirdPlaceMatch && winnerId === 'revert') {
+                        // Reset winner when reverting
+                        setThirdPlaceMatch({
+                          ...thirdPlaceMatch,
+                          winner: undefined
+                        });
+                      }
+                    }}
+                    isActive={true} // Always keep it active
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Podium Display */}
+          <div className="flex justify-center mb-10">
+            <div className="flex items-end justify-center gap-4 mt-0">
               {(() => {
                 // Check multiple possible sources for the champion
                 const tournamentChampion = tournamentData.champion;
@@ -422,55 +515,157 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                 
                 // Use the first available champion source
                 const champion = tournamentChampion || finalWinner || championFromMatch;
+                const hasChampion = !!champion;
                 
-                console.log("Champion detection:", {
-                  hasTournamentChampion: !!tournamentChampion,
-                  hasFinalWinner: !!finalWinner, 
-                  hasChampionFromMatch: !!championFromMatch,
-                  tournamentChampionName: tournamentChampion?.name || 'None',
-                  finalWinnerName: finalWinner?.name || 'None',
-                  championFromMatchName: championFromMatch?.name || 'None',
-                  isDisplayingChampion: !!champion
+                // Determine second place (runner-up)
+                let runnerUp: Team | undefined = undefined;
+                if (finalMatch && finalMatch.winner) {
+                  runnerUp = finalMatch.teamA?.id !== finalMatch.winner.id 
+                    ? finalMatch.teamA 
+                    : finalMatch.teamB;
+                }
+                
+                // Determine third place
+                const thirdPlace = thirdPlaceMatch?.winner;
+                
+                console.log("Medal positions:", {
+                  champion: champion?.name || 'None',
+                  runnerUp: runnerUp?.name || 'None',
+                  thirdPlace: thirdPlace?.name || 'None'
                 });
-                
+
                 return (
-                  <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-tournament-accent/10 mb-2">
-                      <Trophy size={16} className="text-tournament-accent" />
-                    </div>
-                    <div className="font-bold text-lg">
-                      {champion ? champion.name : "Determining Champion..."}
-                    </div>
-                  </div>
+                  <>
+                    {/* 2nd Place */}
+                    {runnerUp && (
+                      <div className="flex-1 text-center">
+                        <div 
+                          className="glass-panel shadow-md p-2 rounded-lg inline-block silver-border"
+                          style={{
+                            background: 'rgba(192, 192, 192, 0.1)',
+                            border: '1px solid rgba(192, 192, 192, 0.3)',
+                            minWidth: '140px',
+                            width: '160px'
+                          }}
+                        >
+                          <div className="flex flex-col items-center">
+                            <div 
+                              className="w-7 h-7 rounded-full flex items-center justify-center mb-1"
+                              style={{
+                                background: 'rgba(192, 192, 192, 0.15)'
+                              }}
+                            >
+                              <Medal size={12} className="text-gray-400" />
+                            </div>
+                            <div className="font-bold text-sm">
+                              {runnerUp.name}
+                            </div>
+                            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-0.5">
+                              2nd Place
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Champion/1st Place */}
+                    {hasChampion && (
+                      <div className="flex-1 text-center" style={{position: 'relative', zIndex: 5}}>
+                        <div 
+                          className="glass-panel shadow-lg p-3 rounded-lg inline-block champion-golden-border"
+                          style={{
+                            transition: 'all 0.5s ease',
+                            transform: 'scale(1.05)',
+                            boxShadow: '0 0 15px rgba(255, 215, 0, 0.5), 0 0 30px rgba(255, 215, 0, 0.3), 0 0 45px rgba(255, 215, 0, 0.1)',
+                            animation: 'glow-champion 2s infinite alternate',
+                            minWidth: '170px',
+                            width: '170px'
+                          }}
+                        >
+                          <div className="flex flex-col items-center">
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center mb-1"
+                              style={{
+                                background: 'rgba(255, 215, 0, 0.15)',
+                                transition: 'all 0.3s ease'
+                              }}
+                            >
+                              <Trophy size={14} className="text-yellow-500" />
+                            </div>
+                            <div className="font-bold text-base" style={{ 
+                              transition: 'all 0.3s ease',
+                              color: '#000'
+                            }}>
+                              {champion.name}
+                            </div>
+                            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-0.5">
+                              Champion
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 3rd Place */}
+                    {thirdPlace && (
+                      <div className="flex-1 text-center">
+                        <div 
+                          className="glass-panel shadow-md p-2 rounded-lg inline-block bronze-border"
+                          style={{
+                            background: 'rgba(205, 127, 50, 0.1)',
+                            border: '1px solid rgba(205, 127, 50, 0.3)',
+                            minWidth: '140px',
+                            width: '160px'
+                          }}
+                        >
+                          <div className="flex flex-col items-center">
+                            <div 
+                              className="w-7 h-7 rounded-full flex items-center justify-center mb-1"
+                              style={{
+                                background: 'rgba(205, 127, 50, 0.15)'
+                              }}
+                            >
+                              <Medal size={12} className="text-amber-700" />
+                            </div>
+                            <div className="font-bold text-sm">
+                              {thirdPlace.name}
+                            </div>
+                            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-0.5">
+                              3rd Place
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 );
               })()}
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Champion</div>
             </div>
           </div>
-        </div>
-        
-        {/* SO black.png logo at the bottom */}
-        <div className="flex justify-center mt-2 mb-2">
-          <div className="w-[30%] min-w-[300px] max-w-[600px]">
-            <div style={{ position: 'relative', width: '100%', height: '100px' }}>
-              <img 
-                src="/SO_transparent_fixed.png" 
-                alt="SO Logo" 
-                style={{ 
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  backgroundColor: 'transparent'
-                }}
-                onError={(e) => {
-                  console.error('Logo image load error');
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = '/placeholder.svg';
-                }}
-              />
+          
+          {/* SO black.png logo at the bottom */}
+          <div className="flex justify-center mt-8">
+            <div className="w-[20%] min-w-[160px] max-w-[300px]">
+              <div style={{ position: 'relative', width: '100%', height: '100px' }}>
+                <img 
+                  src="/SO_transparent_fixed.png" 
+                  alt="SO Logo" 
+                  style={{ 
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    backgroundColor: 'transparent'
+                  }}
+                  onError={(e) => {
+                    console.error('Logo image load error');
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/placeholder.svg';
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
