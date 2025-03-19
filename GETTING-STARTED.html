@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Tracker - Getting Started</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #4b5563;
+            margin-top: 30px;
+        }
+        ol {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 15px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .button:hover {
+            background-color: #1d4ed8;
+        }
+        .note {
+            background-color: #f3f4f6;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        img {
+            max-width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .platform {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tournament Tracker Display - Getting Started</h1>
+    
+    <div class="note">
+        This is a simple guide to help you run the Tournament Tracker application on your computer.
+    </div>
+
+    <h2>Prerequisites</h2>
+    <p>Before you can run this application, you need to install Node.js on your computer.</p>
+    
+    <a href="https://nodejs.org/" class="button" target="_blank">Download Node.js</a>
+    
+    <p>Download the "LTS" version (recommended for most users) and follow the installation instructions.</p>
+
+    <div class="platform">
+        <h2>Windows Users</h2>
+        <p>Once Node.js is installed, you can start the application by:</p>
+        <ol>
+            <li>Double-click the <strong>start-app.bat</strong> file in the application folder</li>
+            <li>A command window will open and the application will start automatically</li>
+            <li>When the application is running, open your web browser and go to: <a href="http://localhost:5173">http://localhost:5173</a></li>
+        </ol>
+        <div class="warning">
+            If you see a Windows security warning, click "More info" and then "Run anyway". This is just Windows being cautious about running scripts.
+        </div>
+    </div>
+
+    <div class="platform">
+        <h2>Mac Users</h2>
+        <p>Once Node.js is installed, you can start the application by:</p>
+        <ol>
+            <li>Open Terminal (press Cmd+Space, type "Terminal", press Enter)</li>
+            <li>Navigate to the application folder using the <code>cd</code> command</li>
+            <li>Run the start script by typing: <code>./start-app.sh</code></li>
+            <li>When the application is running, open your web browser and go to: <a href="http://localhost:5173">http://localhost:5173</a></li>
+        </ol>
+    </div>
+
+    <h2>Troubleshooting</h2>
+    <p>If you have any issues running the application:</p>
+    <ul>
+        <li>Make sure Node.js is properly installed</li>
+        <li>Try restarting your computer after installing Node.js</li>
+        <li>Check the INSTALL.md file for more detailed instructions</li>
+    </ul>
+
+    <div class="note">
+        <p>For more detailed instructions, please refer to the INSTALL.md file included with this application.</p>
+    </div>
+</body>
+</html> 

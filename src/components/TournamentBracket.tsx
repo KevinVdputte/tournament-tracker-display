@@ -392,9 +392,9 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
         </div>
         
         {/* Champion Display */}
-        <div className="flex justify-center mt-20">
+        <div className="flex justify-center mt-[-150px]">
           <div className="text-center">
-            <div className="glass-panel shadow-lg p-4 rounded-lg mb-2">
+            <div className="glass-panel shadow-lg p-4 rounded-lg mb-6 relative z-10">
               {(() => {
                 // Check multiple possible sources for the champion
                 const tournamentChampion = tournamentData.champion;
@@ -439,7 +439,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
         </div>
         
         {/* SO black.png logo at the bottom */}
-        <div className="flex justify-center mt-12 mb-6">
+        <div className="flex justify-center mt-2 mb-2">
           <div className="w-[30%] min-w-[300px] max-w-[600px]">
             <div style={{ position: 'relative', width: '100%', height: '100px' }}>
               <img 
@@ -471,45 +471,51 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 // Helper function to get the vertical spacing between matches in a round
 function getSpacingForMatch(roundId: number, position: number, side?: string): string {
   // First round has consistent spacing
-  if (roundId === 0) return '12px';
-  
-  // Special handling for the wildcard match
-  if (roundId === 2 && position === 2) {
-    return '40px'; // Give appropriate space for the wildcard match
+  if (roundId === 0) {
+    // First round matches should have even spacing
+    return position === 3 ? '0px' : '30px';
   }
   
-  // Calculate spacing based on round number and side
-  const baseSpacing = 24;
-  const multiplier = Math.pow(2, roundId);
-  const spacing = baseSpacing * multiplier;
-  
-  // Adjust spacing for right side matches to ensure proper alignment
-  if (side === 'right' && roundId > 0) {
-    return `${spacing + 8}px`; // Add a small offset for right side matches
+  // For second round
+  if (roundId === 1) {
+    // Second round matches need more spacing as they're fed by pairs of first round matches
+    return '90px';
   }
   
-  return `${spacing}px`;
+  // Special handling for other rounds
+  if (roundId === 2) {
+    return '180px'; // Semi-finals need even more space
+  }
+  
+  return '24px'; // Default spacing
 }
 
 // Helper function to get additional top margin for specific matches
 function getTopMarginForMatch(roundId: number, position: number, side?: string): string {
-  // Special handling for the wildcard match
-  if (roundId === 2 && position === 2) {
-    return '60px'; // Position the wildcard match vertically centered
+  // First round - each team starts with no top margin, just spacing between them
+  if (roundId === 0) return '0px';
+  
+  // Second round - each match should be centered between its two first-round matches
+  if (roundId === 1) {
+    // Top match (position 0) should be between first round positions 0 and 1
+    if (position === 0) return '45px';
+    
+    // Bottom match (position 1) should be between first round positions 2 and 3
+    if (position === 1) return '45px';
   }
   
-  // For the semi-final and final rounds
+  // Semi-finals
+  if (roundId === 2) {
+    // Top semi-final aligned with second round position 0
+    if (position === 0) return '90px';
+    
+    // Bottom semi-final aligned with second round position 1
+    if (position === 1) return '90px';
+  }
+  
+  // Finals - centered between semi-finals
   if (roundId === 3) {
-    return '40px'; // Give space for the semi-final
-  }
-  
-  if (roundId === 4) {
-    return '40px'; // Position the final match nicely
-  }
-  
-  // Adjust top margin for right side matches in first round
-  if (roundId === 0 && side === 'right') {
-    return '12px'; // Add a small offset for right side matches
+    return '160px';
   }
   
   return '0px';
@@ -517,16 +523,20 @@ function getTopMarginForMatch(roundId: number, position: number, side?: string):
 
 // Helper function to get the top margin for a round
 function getMarginForRound(roundId: number, totalRounds: number): string {
+  // First round starts at the top
   if (roundId === 0) return '0px';
   
   // Special handling for the champion display
   if (roundId === totalRounds - 1) {
-    return '120px'; // Position the champion display nicely
+    return '100px';
   }
   
-  // First round has no margin, subsequent rounds increase
-  const spacing = 30 * Math.pow(2, roundId - 1);
-  return `${spacing}px`;
+  // Other rounds need increasing space to accommodate the bracket structure
+  if (roundId === 1) return '30px';
+  if (roundId === 2) return '60px';
+  if (roundId === 3) return '120px';
+  
+  return '20px';
 }
 
 // Helper function to render connecting lines between matches

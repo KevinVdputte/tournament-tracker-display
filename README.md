@@ -1,69 +1,60 @@
-# Welcome to your Lovable project
+# Tournament Tracker Display
 
-## Project info
+A simple web application for tracking and displaying tournament brackets.
 
-**URL**: https://lovable.dev/projects/d1a72e38-8e28-494e-8a7a-ede9d5430c36
+![Tournament Bracket Display](https://example.com/screenshot.png)
 
-## How can I edit this code?
+## Quick Start for Non-Technical Users
 
-There are several ways of editing your application.
+To get started quickly:
 
-**Use Lovable**
+1. **Windows Users**: Double-click the `start-app.bat` file
+2. **Mac Users**: Double-click the `start-app.sh` file (or run it from Terminal)
+3. Open your web browser and go to: http://localhost:5173
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d1a72e38-8e28-494e-8a7a-ede9d5430c36) and start prompting.
+For more detailed instructions, check the `GETTING-STARTED.html` file included with this application.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Features
 
-**Use your preferred IDE**
+- Interactive tournament bracket display
+- Track progress of teams through tournament rounds
+- Intuitive interface for selecting match winners
+- Visual display of semifinals and finals matches
+- Tournament champion display
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## For Developers
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
 
-Follow these steps:
+- Node.js (LTS version recommended)
+- npm (included with Node.js)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Setup
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-**Edit a file directly in GitHub**
+### Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `src/components` - UI components including tournament bracket
+- `src/contexts` - State management for tournament data
+- `src/types` - TypeScript type definitions
+- `src/utils` - Utility functions for tournament operations
 
-**Use GitHub Codespaces**
+## Technologies Used
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
 - React
-- shadcn-ui
+- TypeScript
 - Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d1a72e38-8e28-494e-8a7a-ede9d5430c36) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- Vite
