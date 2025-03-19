@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy } from 'lucide-react';
@@ -27,7 +26,7 @@ const TournamentHeader: React.FC = () => {
             <div className="w-8 h-8 rounded-full flex items-center justify-center bg-tournament-accent/10">
               <Trophy size={16} className="text-tournament-accent" />
             </div>
-            <h1 className="text-lg font-semibold tracking-tight">STEM Tournament Tracker</h1>
+            <h1 className="text-lg font-semibold tracking-tight">Solar Olympiad Finalists</h1>
           </div>
         </div>
         
