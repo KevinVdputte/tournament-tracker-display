@@ -107,20 +107,24 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
           : rightSemifinal.teamA;
       }
       
+      // Preserve the existing winner if there is one
+      const currentWinner = thirdPlaceMatch?.winner;
+      
       // Create 3rd place match with available losers
-      setThirdPlaceMatch({
+      setThirdPlaceMatch(prevMatch => ({
         id: 'match-3rd-place',
         round: 3, // Same round as finals
         position: 1, // Below the final match
         teamA: leftLoser,
         teamB: rightLoser,
-        winner: undefined, // Reset winner if match is being updated
+        winner: currentWinner, // Preserve the winner if it exists
         side: 'center'
-      });
+      }));
       
       console.log("Setting up third place match with available semifinal losers:", {
         teamA: leftLoser?.name || 'Awaiting left semifinal result',
-        teamB: rightLoser?.name || 'Awaiting right semifinal result'
+        teamB: rightLoser?.name || 'Awaiting right semifinal result',
+        preservingWinner: currentWinner?.name || 'No winner to preserve'
       });
     }
     
@@ -144,7 +148,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
         setLocalFinalTeams(null);
       }
     }
-  }, [tournamentData]);
+  }, [tournamentData, thirdPlaceMatch?.winner]);
 
   // Split rounds into left, center and right sections
   const leftRounds = tournamentData.rounds.slice(0, -1);
@@ -280,8 +284,8 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   }
 
   return (
-    <div className="w-full overflow-x-auto py-6">
-      <div className="min-w-[960px] px-4 relative pb-[400px]">
+    <div className="w-full overflow-x-auto py-4">
+      <div className="min-w-[960px] px-4 relative pb-[130px]">
         <div className="flex">
           {/* Left side of the bracket */}
           <div className="flex-1 flex justify-end">
@@ -400,33 +404,34 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                       </div>
                       
                       {/* 3rd Place Match - Directly under the finals */}
-                      <div className="mt-8 mb-4">
+                      <div className="mt-4 mb-2">
                         <div className="text-xs text-muted-foreground mb-1 text-center">3rd Place Match</div>
-                        <div className="relative" style={{ transform: 'scale(0.9)' }}>
+                        <div className="relative" style={{ transform: 'scale(0.85)' }}>
                           {thirdPlaceMatch ? (
                             <MatchCard
                               match={thirdPlaceMatch}
                               onSelectWinner={(matchId, winnerId) => {
                                 console.log("3rd place match selection:", { matchId, winnerId });
+                                
+                                // First call the main onSelectWinner from props to update any parent state
                                 onSelectWinner(matchId, winnerId);
                                 
-                                // Update local state to maintain interactivity when winner is selected
-                                if (thirdPlaceMatch && winnerId !== 'revert') {
-                                  const winner = winnerId === thirdPlaceMatch.teamA?.id 
-                                    ? thirdPlaceMatch.teamA 
-                                    : thirdPlaceMatch.teamB;
+                                // Then update our local state to ensure UI stays consistent
+                                setThirdPlaceMatch(prev => {
+                                  if (!prev) return null;
                                   
-                                  setThirdPlaceMatch({
-                                    ...thirdPlaceMatch,
-                                    winner: winner
-                                  });
-                                } else if (thirdPlaceMatch && winnerId === 'revert') {
-                                  // Reset winner when reverting
-                                  setThirdPlaceMatch({
-                                    ...thirdPlaceMatch,
-                                    winner: undefined
-                                  });
-                                }
+                                  // For revert action, reset the winner
+                                  if (winnerId === 'revert') {
+                                    return { ...prev, winner: undefined };
+                                  }
+                                  
+                                  // For selecting a winner
+                                  const winner = winnerId === prev.teamA?.id 
+                                    ? prev.teamA 
+                                    : prev.teamB;
+                                    
+                                  return { ...prev, winner };
+                                });
                               }}
                               isActive={!!(thirdPlaceMatch.teamA && thirdPlaceMatch.teamB)} // Active if both teams are present
                             />
@@ -511,10 +516,10 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
         </div>
         
         {/* Bottom Tournament Results Section - Positioned in a better way to ensure it's clickable */}
-        <div className="absolute left-0 right-0" style={{ bottom: '30px' }}>
+        <div className="absolute left-0 right-0" style={{ bottom: '10px' }}>
           {/* Podium Display */}
-          <div className="flex justify-center mb-10 z-10 pointer-events-auto">
-            <div className="flex items-end justify-center gap-4">
+          <div className="flex justify-center mb-4 z-10 pointer-events-auto">
+            <div className="flex items-end justify-center gap-3">
               {(() => {
                 // Check multiple possible sources for the champion
                 const tournamentChampion = tournamentData.champion;
@@ -556,22 +561,22 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     {runnerUp && (
                       <div className="flex-1 text-center">
                         <div 
-                          className="glass-panel shadow-md p-2 rounded-lg inline-block silver-border"
+                          className="glass-panel shadow-md p-1 rounded-lg inline-block silver-border"
                           style={{
                             background: 'rgba(192, 192, 192, 0.1)',
                             border: '1px solid rgba(192, 192, 192, 0.3)',
-                            minWidth: '140px',
-                            width: '160px'
+                            minWidth: '120px',
+                            width: '130px'
                           }}
                         >
                           <div className="flex flex-col items-center">
                             <div 
-                              className="w-7 h-7 rounded-full flex items-center justify-center mb-1"
+                              className="w-6 h-6 rounded-full flex items-center justify-center mb-1"
                               style={{
                                 background: 'rgba(192, 192, 192, 0.15)'
                               }}
                             >
-                              <Medal size={12} className="text-gray-400" />
+                              <Medal size={10} className="text-gray-400" />
                             </div>
                             <div className="font-bold text-sm">
                               {runnerUp.name}
@@ -588,25 +593,25 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     {hasChampion && (
                       <div className="flex-1 text-center" style={{position: 'relative', zIndex: 5}}>
                         <div 
-                          className="glass-panel shadow-lg p-3 rounded-lg inline-block champion-golden-border"
+                          className="glass-panel shadow-lg p-2 rounded-lg inline-block champion-golden-border"
                           style={{
                             transition: 'all 0.5s ease',
                             transform: 'scale(1.05)',
                             boxShadow: '0 0 15px rgba(255, 215, 0, 0.5), 0 0 30px rgba(255, 215, 0, 0.3), 0 0 45px rgba(255, 215, 0, 0.1)',
                             animation: 'glow-champion 2s infinite alternate',
-                            minWidth: '170px',
-                            width: '170px'
+                            minWidth: '140px',
+                            width: '140px'
                           }}
                         >
                           <div className="flex flex-col items-center">
                             <div 
-                              className="w-8 h-8 rounded-full flex items-center justify-center mb-1"
+                              className="w-7 h-7 rounded-full flex items-center justify-center mb-1"
                               style={{
                                 background: 'rgba(255, 215, 0, 0.15)',
                                 transition: 'all 0.3s ease'
                               }}
                             >
-                              <Trophy size={14} className="text-yellow-500" />
+                              <Trophy size={12} className="text-yellow-500" />
                             </div>
                             <div className="font-bold text-base" style={{ 
                               transition: 'all 0.3s ease',
@@ -626,22 +631,22 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     {thirdPlace && (
                       <div className="flex-1 text-center">
                         <div 
-                          className="glass-panel shadow-md p-2 rounded-lg inline-block bronze-border"
+                          className="glass-panel shadow-md p-1 rounded-lg inline-block bronze-border"
                           style={{
                             background: 'rgba(205, 127, 50, 0.1)',
                             border: '1px solid rgba(205, 127, 50, 0.3)',
-                            minWidth: '140px',
-                            width: '160px'
+                            minWidth: '120px',
+                            width: '130px'
                           }}
                         >
                           <div className="flex flex-col items-center">
                             <div 
-                              className="w-7 h-7 rounded-full flex items-center justify-center mb-1"
+                              className="w-6 h-6 rounded-full flex items-center justify-center mb-1"
                               style={{
                                 background: 'rgba(205, 127, 50, 0.15)'
                               }}
                             >
-                              <Medal size={12} className="text-amber-700" />
+                              <Medal size={10} className="text-amber-700" />
                             </div>
                             <div className="font-bold text-sm">
                               {thirdPlace.name}
@@ -660,9 +665,9 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
           </div>
           
           {/* SO black.png logo at the bottom */}
-          <div className="flex justify-center z-10 pointer-events-auto">
-            <div className="w-[20%] min-w-[160px] max-w-[300px]">
-              <div style={{ position: 'relative', width: '100%', height: '60px' }}>
+          <div className="flex justify-center z-10 pointer-events-auto mt-2">
+            <div className="w-[12%] min-w-[100px] max-w-[180px]">
+              <div style={{ position: 'relative', width: '100%', height: '100px' }}>
                 <img 
                   src="/SO_transparent_fixed.png" 
                   alt="SO Logo" 
@@ -695,21 +700,21 @@ function getSpacingForMatch(roundId: number, position: number, side?: string): s
   // First round has consistent spacing
   if (roundId === 0) {
     // First round matches should have even spacing
-    return position === 3 ? '0px' : '30px';
+    return position === 3 ? '0px' : '25px';
   }
   
   // For second round
   if (roundId === 1) {
     // Second round matches need more spacing as they're fed by pairs of first round matches
-    return '90px';
+    return '70px';
   }
   
   // Special handling for other rounds
   if (roundId === 2) {
-    return '180px'; // Semi-finals need even more space
+    return '140px'; // Semi-finals need even more space
   }
   
-  return '24px'; // Default spacing
+  return '20px'; // Default spacing
 }
 
 // Helper function to get additional top margin for specific matches
@@ -720,24 +725,24 @@ function getTopMarginForMatch(roundId: number, position: number, side?: string):
   // Second round - each match should be centered between its two first-round matches
   if (roundId === 1) {
     // Top match (position 0) should be between first round positions 0 and 1
-    if (position === 0) return '45px';
+    if (position === 0) return '35px';
     
     // Bottom match (position 1) should be between first round positions 2 and 3
-    if (position === 1) return '45px';
+    if (position === 1) return '35px';
   }
   
   // Semi-finals
   if (roundId === 2) {
     // Top semi-final aligned with second round position 0
-    if (position === 0) return '90px';
+    if (position === 0) return '70px';
     
     // Bottom semi-final aligned with second round position 1
-    if (position === 1) return '90px';
+    if (position === 1) return '70px';
   }
   
   // Finals - centered between semi-finals
   if (roundId === 3) {
-    return '160px';
+    return '130px';
   }
   
   return '0px';
@@ -750,15 +755,15 @@ function getMarginForRound(roundId: number, totalRounds: number): string {
   
   // Special handling for the champion display
   if (roundId === totalRounds - 1) {
-    return '100px';
+    return '80px';
   }
   
   // Other rounds need increasing space to accommodate the bracket structure
-  if (roundId === 1) return '30px';
-  if (roundId === 2) return '60px';
-  if (roundId === 3) return '120px';
+  if (roundId === 1) return '25px';
+  if (roundId === 2) return '50px';
+  if (roundId === 3) return '90px';
   
-  return '20px';
+  return '15px';
 }
 
 // Helper function to render connecting lines between matches
