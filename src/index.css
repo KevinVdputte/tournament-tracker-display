@@ -36,10 +36,10 @@
 
     --radius: 0.5rem;
 
-    --tournament-accent: 259 94% 64%;
-    --tournament-muted: 260 100% 97%;
+    --tournament-accent: 220 70% 50%;
+    --tournament-muted: 220 100% 97%;
     --tournament-border: 240 5.9% 90%;
-    --tournament-highlight: 259 94% 64%;
+    --tournament-highlight: 220 70% 50%;
   }
 
   .dark {
@@ -71,10 +71,10 @@
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
 
-    --tournament-accent: 259 94% 64%;
-    --tournament-muted: 260 15% 8%;
+    --tournament-accent: 220 70% 50%;
+    --tournament-muted: 220 15% 8%;
     --tournament-border: 240 3.7% 15.9%;
-    --tournament-highlight: 259 94% 64%;
+    --tournament-highlight: 220 70% 50%;
   }
 }
 
