@@ -11,7 +11,9 @@ const MatchCard: React.FC<MatchDisplayProps> = ({
   const [hoverTeam, setHoverTeam] = useState<string | null>(null);
   
   const handleWinnerSelection = (team: Team) => {
-    if (!isActive && !match.winner) return;
+    // Always allow selection if both teams are present, even if the match is not marked as active
+    // This ensures reverted matches can still be selected
+    if ((!isActive && !match.winner) && (!match.teamA || !match.teamB)) return;
     
     // If team is already the winner, revert the selection
     if (match.winner && match.winner.id === team.id) {

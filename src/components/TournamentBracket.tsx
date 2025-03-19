@@ -28,6 +28,12 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       .flatMap(round => round.matches)
       .filter(match => match.winner)
       .map(match => match.id);
+
+    // Also add any match that has both teams but no winner, to ensure reverted matches remain active
+    const revertedMatches = tournamentData.rounds
+      .flatMap(round => round.matches)
+      .filter(match => match.teamA && match.teamB && !match.winner)
+      .map(match => match.id);
     
     // Add final matches with both teams but no winner
     const finalRound = tournamentData.rounds.find(r => r.id === 3);
@@ -67,9 +73,10 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     console.log("Current round:", tournamentData.currentRound);
     console.log("Active matches:", newActiveMatches);
     console.log("Completed matches (can be reverted):", completedMatches);
+    console.log("Reverted matches:", revertedMatches);
     
-    // Combine active matches and completed matches that can be reverted
-    setActiveMatches([...newActiveMatches, ...completedMatches]);
+    // Combine active matches, completed matches that can be reverted, and reverted matches
+    setActiveMatches([...new Set([...newActiveMatches, ...completedMatches, ...revertedMatches])]);
   }, [tournamentData, thirdPlaceMatch]);
 
   // Check for semifinal winners and update the final match if needed
