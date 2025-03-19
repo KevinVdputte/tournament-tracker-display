@@ -1,15 +1,16 @@
-
 import { Team, TournamentData, Round, Match } from '@/types/tournament';
 
 export const initializeTournament = (teams: Team[]): TournamentData => {
   // Organize teams into rounds
   const rounds: Round[] = [];
   
-  // First round (10 matches)
+  console.log("Initializing tournament with teams:", teams.map(t => t.name));
+  
+  // First round (8 matches)
   const firstRoundMatches: Match[] = [];
   
-  // Left side of the bracket (first 5 matches)
-  for (let i = 0; i < 5; i++) {
+  // Left side of the bracket (first 4 matches)
+  for (let i = 0; i < 4; i++) {
     firstRoundMatches.push({
       id: `match-1-${i}`,
       round: 0,
@@ -21,15 +22,15 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
     });
   }
   
-  // Right side of the bracket (last 5 matches)
-  for (let i = 0; i < 5; i++) {
+  // Right side of the bracket (last 4 matches)
+  for (let i = 0; i < 4; i++) {
     firstRoundMatches.push({
-      id: `match-1-${i + 5}`,
+      id: `match-1-${i + 4}`,
       round: 0,
-      position: i + 5,
-      teamA: teams[i * 2 + 10],
-      teamB: teams[i * 2 + 11],
-      nextMatchId: `match-2-${Math.floor(i / 2) + 3}`,
+      position: i + 4,
+      teamA: teams[i * 2 + 8],
+      teamB: teams[i * 2 + 9],
+      nextMatchId: `match-2-${Math.floor(i / 2) + 2}`,
       side: 'right'
     });
   }
@@ -40,27 +41,27 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
     matches: firstRoundMatches
   });
 
-  // Second round (6 matches - 3 on each side)
+  // Second round (4 matches - 2 on each side)
   const secondRoundMatches: Match[] = [];
   
-  // Left side (3 matches)
-  for (let i = 0; i < 3; i++) {
+  // Left side (2 matches)
+  for (let i = 0; i < 2; i++) {
     secondRoundMatches.push({
       id: `match-2-${i}`,
       round: 1,
       position: i,
-      nextMatchId: i < 2 ? `match-3-0` : `match-3-1`,
+      nextMatchId: `match-3-0`,
       side: 'left'
     });
   }
   
-  // Right side (3 matches)
-  for (let i = 0; i < 3; i++) {
+  // Right side (2 matches)
+  for (let i = 0; i < 2; i++) {
     secondRoundMatches.push({
-      id: `match-2-${i + 3}`,
+      id: `match-2-${i + 2}`,
       round: 1,
-      position: i + 3,
-      nextMatchId: i < 2 ? `match-3-2` : `match-3-3`,
+      position: i + 2,
+      nextMatchId: `match-3-1`,
       side: 'right'
     });
   }
@@ -71,94 +72,67 @@ export const initializeTournament = (teams: Team[]): TournamentData => {
     matches: secondRoundMatches
   });
 
-  // Third round (4 matches - 2 on each side)
-  const thirdRoundMatches: Match[] = [];
-  
-  // Left quarter-finals
-  thirdRoundMatches.push({
-    id: `match-3-0`,
-    round: 2,
-    position: 0,
-    nextMatchId: `match-4-0`,
-    side: 'left'
-  });
-  
-  thirdRoundMatches.push({
-    id: `match-3-1`,
-    round: 2,
-    position: 1,
-    nextMatchId: `match-4-0`,
-    side: 'left'
-  });
-  
-  // Right quarter-finals
-  thirdRoundMatches.push({
-    id: `match-3-2`,
-    round: 2,
-    position: 2,
-    nextMatchId: `match-4-1`,
-    side: 'right'
-  });
-  
-  thirdRoundMatches.push({
-    id: `match-3-3`,
-    round: 2,
-    position: 3,
-    nextMatchId: `match-4-1`,
-    side: 'right'
-  });
-  
-  rounds.push({
-    id: 2,
-    name: 'Quarter Finals',
-    matches: thirdRoundMatches
-  });
-
-  // Fourth round (2 matches - semifinals)
-  const fourthRoundMatches: Match[] = [
+  // Third round (2 matches - 1 on each side)
+  const thirdRoundMatches: Match[] = [
     {
-      id: 'match-4-0',
-      round: 3,
+      id: `match-3-0`,
+      round: 2,
       position: 0,
-      nextMatchId: 'match-5-0',
+      nextMatchId: `match-4-0`,
       side: 'left'
     },
     {
-      id: 'match-4-1',
-      round: 3,
+      id: `match-3-1`,
+      round: 2,
       position: 1,
-      nextMatchId: 'match-5-0',
+      nextMatchId: `match-4-0`,
       side: 'right'
     }
   ];
   
   rounds.push({
-    id: 3,
+    id: 2,
     name: 'Semi Finals',
-    matches: fourthRoundMatches
+    matches: thirdRoundMatches
   });
 
-  // Fifth round (1 match - final)
-  const fifthRoundMatches: Match[] = [
+  // Fourth round (1 match - final)
+  const fourthRoundMatches: Match[] = [
     {
-      id: 'match-5-0',
-      round: 4,
+      id: 'match-4-0',
+      round: 3,
       position: 0,
       side: 'center'
     }
   ];
   
   rounds.push({
-    id: 4,
+    id: 3,
     name: 'Final',
-    matches: fifthRoundMatches
+    matches: fourthRoundMatches
   });
 
   // Champion display
   rounds.push({
-    id: 5,
+    id: 4,
     name: 'Champion',
-    matches: []
+    matches: [{
+      id: 'match-champion',
+      round: 4,
+      position: 0,
+      side: 'center'
+    }]
+  });
+
+  // Log match structure for debugging
+  console.log("Tournament structure initialized:");
+  rounds.forEach((round, i) => {
+    console.log(`Round ${i} (${round.name}):`);
+    round.matches.forEach(match => {
+      console.log(`  Match ${match.id}: Side ${match.side}, Position ${match.position}, Next: ${match.nextMatchId || 'None'}`);
+      if (match.teamA) console.log(`    TeamA: ${match.teamA.name}`);
+      if (match.teamB) console.log(`    TeamB: ${match.teamB.name}`);
+    });
   });
 
   return {

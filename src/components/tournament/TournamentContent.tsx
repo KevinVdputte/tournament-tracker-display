@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TournamentStage } from '@/types/tournament';
 import SetupScreen from '@/components/SetupScreen';
 import TournamentBracket from '@/components/TournamentBracket';
@@ -11,8 +10,18 @@ const TournamentContent: React.FC = () => {
     stage, 
     tournamentData, 
     initializeNewTournament, 
-    handleSelectWinner 
+    handleSelectWinner,
+    handleReset
   } = useTournament();
+
+  // Debug logging
+  useEffect(() => {
+    if (tournamentData) {
+      console.log('TournamentContent - Stage:', stage);
+      console.log('TournamentContent - Champion:', tournamentData.champion?.name);
+      console.log('TournamentContent - Current Round:', tournamentData.currentRound);
+    }
+  }, [tournamentData, stage]);
 
   return (
     <>
@@ -28,10 +37,16 @@ const TournamentContent: React.FC = () => {
       )}
       
       {stage === TournamentStage.COMPLETE && tournamentData?.champion && (
-        <WinnerDisplay
-          champion={tournamentData.champion}
-          onReset={useTournament().handleReset}
-        />
+        <>
+          <TournamentBracket 
+            tournamentData={tournamentData}
+            onSelectWinner={handleSelectWinner}
+          />
+          <WinnerDisplay
+            champion={tournamentData.champion}
+            onReset={handleReset}
+          />
+        </>
       )}
     </>
   );

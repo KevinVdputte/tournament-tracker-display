@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { SetupScreenProps, Team } from '@/types/tournament';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { toast } from "sonner";
 
 const SetupScreen: React.FC<SetupScreenProps> = ({ onStartTournament }) => {
   const [teams, setTeams] = useState<Team[]>(
-    Array.from({ length: 20 }, (_, i) => ({
+    Array.from({ length: 16 }, (_, i) => ({
       id: `team-${i + 1}`,
       name: ''
     }))
@@ -53,7 +52,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStartTournament }) => {
       "Alpha Team", "Beta Squad", "Team Nova", "Quantum Force", "Nebula Group",
       "Fusion Team", "Enigma Squad", "Phoenix Group", "Stellar Team", "Omega Squad",
       "Team Apex", "Kronos Group", "Vector Team", "Eclipse Squad", "Matrix Team",
-      "Infiniti Group", "Zenith Squad", "Cosmic Team", "Spectrum Group", "Horizon Team"
+      "SO black.png"
     ];
     
     // Shuffle the array
@@ -79,7 +78,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStartTournament }) => {
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Tournament Setup</h1>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Enter the names of all 20 teams that will participate in the tournament.
+          Enter the names of all 16 teams that will participate in the tournament.
         </p>
       </div>
 
@@ -106,7 +105,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStartTournament }) => {
                 Left Bracket
               </span>
             </div>
-            {teams.slice(0, 10).map((team, index) => (
+            {teams.slice(0, 8).map((team, index) => (
               <TeamInput
                 key={team.id}
                 id={team.id}
@@ -128,14 +127,14 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStartTournament }) => {
                 Right Bracket
               </span>
             </div>
-            {teams.slice(10, 20).map((team, index) => (
+            {teams.slice(8, 16).map((team, index) => (
               <TeamInput
                 key={team.id}
                 id={team.id}
-                label={`Team ${index + 11}`}
+                label={`Team ${index + 9}`}
                 value={team.name}
                 onChange={handleTeamNameChange}
-                placeholder={`Enter team ${index + 11} name`}
+                placeholder={`Enter team ${index + 9} name`}
               />
             ))}
           </div>
