@@ -88,6 +88,42 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     
     const finalMatch = finalRound.matches[0];
     
+    // Create a 3rd place match as soon as at least one semifinal has a winner
+    if (leftSemifinal?.winner || rightSemifinal?.winner) {
+      // Determine semifinal losers based on available information
+      let leftLoser, rightLoser;
+      
+      // For left semifinal
+      if (leftSemifinal?.winner) {
+        leftLoser = leftSemifinal.winner.id === leftSemifinal.teamA?.id 
+          ? leftSemifinal.teamB 
+          : leftSemifinal.teamA;
+      }
+      
+      // For right semifinal
+      if (rightSemifinal?.winner) {
+        rightLoser = rightSemifinal.winner.id === rightSemifinal.teamA?.id 
+          ? rightSemifinal.teamB 
+          : rightSemifinal.teamA;
+      }
+      
+      // Create 3rd place match with available losers
+      setThirdPlaceMatch({
+        id: 'match-3rd-place',
+        round: 3, // Same round as finals
+        position: 1, // Below the final match
+        teamA: leftLoser,
+        teamB: rightLoser,
+        winner: undefined, // Reset winner if match is being updated
+        side: 'center'
+      });
+      
+      console.log("Setting up third place match with available semifinal losers:", {
+        teamA: leftLoser?.name || 'Awaiting left semifinal result',
+        teamB: rightLoser?.name || 'Awaiting right semifinal result'
+      });
+    }
+    
     // If both semifinal winners exist but final match doesn't have teams set,
     // update our local state to ensure the UI shows the finalists
     if (leftSemifinal?.winner && rightSemifinal?.winner) {
@@ -106,33 +142,6 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
       } else {
         // If the final match already has teams set, clear our local state
         setLocalFinalTeams(null);
-      }
-      
-      // If both semifinals have winners, determine the losers for 3rd place match
-      const leftLoser = leftSemifinal.winner?.id === leftSemifinal.teamA?.id 
-        ? leftSemifinal.teamB 
-        : leftSemifinal.teamA;
-        
-      const rightLoser = rightSemifinal.winner?.id === rightSemifinal.teamA?.id
-        ? rightSemifinal.teamB
-        : rightSemifinal.teamA;
-        
-      if (leftLoser && rightLoser) {
-        console.log("Setting up third place match with semifinal losers:", {
-          teamA: leftLoser.name,
-          teamB: rightLoser.name
-        });
-        
-        // Create or update third place match
-        setThirdPlaceMatch({
-          id: 'match-3rd-place',
-          round: 3, // Same round as finals
-          position: 1, // Below the final match
-          teamA: leftLoser,
-          teamB: rightLoser,
-          winner: undefined, // Reset winner if match is being updated
-          side: 'center'
-        });
       }
     }
   }, [tournamentData]);
@@ -272,7 +281,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
   return (
     <div className="w-full overflow-x-auto py-6">
-      <div className="min-w-[960px] px-4">
+      <div className="min-w-[960px] px-4 relative pb-[400px]">
         <div className="flex">
           {/* Left side of the bracket */}
           <div className="flex-1 flex justify-end">
@@ -369,23 +378,67 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
                                         tournamentData.currentRound >= 3;
                   
                   return (
-                    <div key={displayMatch.id} className="relative">
-                      <MatchCard
-                        match={displayMatch}
-                        onSelectWinner={onSelectWinner}
-                        isActive={isInteractive}
-                      />
-                      {/* Add highlighted border if finalists are set */}
-                      {displayMatch.teamA && displayMatch.teamB && (
-                        <div 
-                          className="absolute inset-0 rounded-lg border-2 border-tournament-accent/50 pointer-events-none"
-                          style={{ 
-                            transform: 'scale(1.05)',
-                            opacity: 0.5,
-                            boxShadow: '0 0 15px rgba(var(--tournament-accent-rgb), 0.3)'
-                          }}
+                    <div>
+                      {/* Final Match */}
+                      <div key={displayMatch.id} className="relative">
+                        <MatchCard
+                          match={displayMatch}
+                          onSelectWinner={onSelectWinner}
+                          isActive={isInteractive}
                         />
-                      )}
+                        {/* Add highlighted border if finalists are set */}
+                        {displayMatch.teamA && displayMatch.teamB && (
+                          <div 
+                            className="absolute inset-0 rounded-lg border-2 border-tournament-accent/50 pointer-events-none"
+                            style={{ 
+                              transform: 'scale(1.05)',
+                              opacity: 0.5,
+                              boxShadow: '0 0 15px rgba(var(--tournament-accent-rgb), 0.3)'
+                            }}
+                          />
+                        )}
+                      </div>
+                      
+                      {/* 3rd Place Match - Directly under the finals */}
+                      <div className="mt-8 mb-4">
+                        <div className="text-xs text-muted-foreground mb-1 text-center">3rd Place Match</div>
+                        <div className="relative" style={{ transform: 'scale(0.9)' }}>
+                          {thirdPlaceMatch ? (
+                            <MatchCard
+                              match={thirdPlaceMatch}
+                              onSelectWinner={(matchId, winnerId) => {
+                                console.log("3rd place match selection:", { matchId, winnerId });
+                                onSelectWinner(matchId, winnerId);
+                                
+                                // Update local state to maintain interactivity when winner is selected
+                                if (thirdPlaceMatch && winnerId !== 'revert') {
+                                  const winner = winnerId === thirdPlaceMatch.teamA?.id 
+                                    ? thirdPlaceMatch.teamA 
+                                    : thirdPlaceMatch.teamB;
+                                  
+                                  setThirdPlaceMatch({
+                                    ...thirdPlaceMatch,
+                                    winner: winner
+                                  });
+                                } else if (thirdPlaceMatch && winnerId === 'revert') {
+                                  // Reset winner when reverting
+                                  setThirdPlaceMatch({
+                                    ...thirdPlaceMatch,
+                                    winner: undefined
+                                  });
+                                }
+                              }}
+                              isActive={!!(thirdPlaceMatch.teamA && thirdPlaceMatch.teamB)} // Active if both teams are present
+                            />
+                          ) : (
+                            <div className="match-card glass-panel p-3 rounded-lg opacity-60">
+                              <div className="h-12 flex items-center justify-center">
+                                <p className="text-xs text-muted-foreground italic">Awaiting semifinal results</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -457,48 +510,11 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
           })()}
         </div>
         
-        {/* Bottom Tournament Results Section - Positioned higher over the grid */}
-        <div className="relative" style={{ marginTop: '-300px' }}>
-          {/* 3rd Place Match */}
-          {thirdPlaceMatch && thirdPlaceMatch.teamA && thirdPlaceMatch.teamB && (
-            <div className="flex justify-center mb-3">
-              <div className="text-center w-[320px]">
-                <div className="text-xs text-muted-foreground mb-1">3rd Place Match</div>
-                <div className="relative" style={{ transform: 'scale(0.85)' }}>
-                  <MatchCard
-                    match={thirdPlaceMatch}
-                    onSelectWinner={(matchId, winnerId) => {
-                      console.log("3rd place match selection:", { matchId, winnerId });
-                      onSelectWinner(matchId, winnerId);
-                      
-                      // Update local state to maintain interactivity when winner is selected
-                      if (thirdPlaceMatch && winnerId !== 'revert') {
-                        const winner = winnerId === thirdPlaceMatch.teamA?.id 
-                          ? thirdPlaceMatch.teamA 
-                          : thirdPlaceMatch.teamB;
-                        
-                        setThirdPlaceMatch({
-                          ...thirdPlaceMatch,
-                          winner: winner
-                        });
-                      } else if (thirdPlaceMatch && winnerId === 'revert') {
-                        // Reset winner when reverting
-                        setThirdPlaceMatch({
-                          ...thirdPlaceMatch,
-                          winner: undefined
-                        });
-                      }
-                    }}
-                    isActive={true} // Always keep it active
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          
+        {/* Bottom Tournament Results Section - Positioned in a better way to ensure it's clickable */}
+        <div className="absolute left-0 right-0" style={{ bottom: '30px' }}>
           {/* Podium Display */}
-          <div className="flex justify-center mb-10">
-            <div className="flex items-end justify-center gap-4 mt-0">
+          <div className="flex justify-center mb-10 z-10 pointer-events-auto">
+            <div className="flex items-end justify-center gap-4">
               {(() => {
                 // Check multiple possible sources for the champion
                 const tournamentChampion = tournamentData.champion;
@@ -644,9 +660,9 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
           </div>
           
           {/* SO black.png logo at the bottom */}
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center z-10 pointer-events-auto">
             <div className="w-[20%] min-w-[160px] max-w-[300px]">
-              <div style={{ position: 'relative', width: '100%', height: '100px' }}>
+              <div style={{ position: 'relative', width: '100%', height: '60px' }}>
                 <img 
                   src="/SO_transparent_fixed.png" 
                   alt="SO Logo" 
