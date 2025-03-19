@@ -15,11 +15,20 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   useEffect(() => {
     // Get matches from the current round
     const currentRoundMatches = tournamentData.rounds[tournamentData.currentRound]?.matches || [];
+    
+    // Matches without winners in the current round should be active
     let newActiveMatches = currentRoundMatches
       .filter(match => match.teamA && match.teamB && !match.winner)
       .map(match => match.id);
     
-    // Always check if there's a final match that should be active
+    // Add matches with winners that can be reverted (all completed matches)
+    // We'll determine in the handler if they can actually be reverted
+    const completedMatches = tournamentData.rounds
+      .flatMap(round => round.matches)
+      .filter(match => match.winner)
+      .map(match => match.id);
+    
+    // Add final matches with both teams but no winner
     const finalRound = tournamentData.rounds.find(r => r.id === 3);
     if (finalRound) {
       const finalMatches = finalRound.matches
@@ -41,8 +50,10 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     // Log current state for debugging
     console.log("Current round:", tournamentData.currentRound);
     console.log("Active matches:", newActiveMatches);
+    console.log("Completed matches (can be reverted):", completedMatches);
     
-    setActiveMatches(newActiveMatches);
+    // Combine active matches and completed matches that can be reverted
+    setActiveMatches([...newActiveMatches, ...completedMatches]);
   }, [tournamentData]);
 
   // Check for semifinal winners and update the final match if needed

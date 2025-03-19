@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { MatchDisplayProps, Team } from '@/types/tournament';
 import { cn } from '@/lib/utils';
-import { ChevronRight, Trophy } from 'lucide-react';
+import { ChevronRight, Trophy, RotateCcw } from 'lucide-react';
 
 const MatchCard: React.FC<MatchDisplayProps> = ({ 
   match, 
@@ -12,7 +11,15 @@ const MatchCard: React.FC<MatchDisplayProps> = ({
   const [hoverTeam, setHoverTeam] = useState<string | null>(null);
   
   const handleWinnerSelection = (team: Team) => {
-    if (!isActive) return;
+    if (!isActive && !match.winner) return;
+    
+    // If team is already the winner, revert the selection
+    if (match.winner && match.winner.id === team.id) {
+      onSelectWinner(match.id, 'revert');
+      return;
+    }
+    
+    // Otherwise set team as winner
     onSelectWinner(match.id, team.id);
   };
 
@@ -28,28 +35,40 @@ const MatchCard: React.FC<MatchDisplayProps> = ({
 
   const renderTeam = (team?: Team, isWinner?: boolean) => {
     const isHovered = team && hoverTeam === team.id;
+    const canRevert = isWinner && match.winner;
     
     return (
       <div 
         className={cn(
           "px-3 py-2 rounded-md transition-all duration-200 cursor-pointer",
-          isActive && "hover:bg-tournament-accent/5",
+          isActive && !isWinner && "hover:bg-tournament-accent/5",
           isWinner && "bg-tournament-muted font-medium",
-          isHovered && "bg-tournament-accent/10"
+          isWinner && isHovered && "bg-red-100/20",
+          !isWinner && isHovered && "bg-tournament-accent/10"
         )}
-        onClick={() => team && isActive && handleWinnerSelection(team)}
+        onClick={() => team && handleWinnerSelection(team)}
         onMouseEnter={() => team && setHoverTeam(team.id)}
         onMouseLeave={() => setHoverTeam(null)}
       >
         <div className="flex items-center justify-between">
           <span className={cn(
             "truncate max-w-[130px] sm:max-w-[180px]",
-            isWinner && "text-tournament-accent"
+            isWinner && !isHovered && "text-tournament-accent",
+            isWinner && isHovered && "text-red-500"
           )}>
             {team ? team.name : "TBD"}
           </span>
           {isWinner && (
-            <Trophy size={14} className="text-tournament-accent ml-2 animate-pulse-light" />
+            <div className="flex items-center ml-2">
+              {isHovered ? (
+                <div className="flex items-center gap-1 text-red-500 animate-pulse">
+                  <RotateCcw size={14} />
+                  <span className="text-xs">Revert</span>
+                </div>
+              ) : (
+                <Trophy size={14} className="text-tournament-accent animate-pulse-light" />
+              )}
+            </div>
           )}
           {isActive && isHovered && !isWinner && (
             <ChevronRight size={14} className="text-tournament-accent ml-2 animate-pulse-light" />

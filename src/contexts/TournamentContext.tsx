@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Team, TournamentData, TournamentStage } from '@/types/tournament';
+import { Team, TournamentData, TournamentStage, Match } from '@/types/tournament';
 import { toast } from "sonner";
 import { initializeTournament } from '@/utils/tournamentUtils';
 
@@ -43,12 +43,98 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const newData = JSON.parse(JSON.stringify(prev)) as TournamentData;
       
       // Find the match and update it
-      const currentRound = newData.rounds[prev.currentRound];
-      const matchIndex = currentRound.matches.findIndex(m => m.id === matchId);
+      let targetRound = newData.rounds[prev.currentRound];
+      let matchIndex = targetRound.matches.findIndex(m => m.id === matchId);
+      let targetRoundIndex = prev.currentRound;
+      
+      // If not found in current round, search all rounds (for matches that can be reverted)
+      if (matchIndex === -1) {
+        for (let i = 0; i < newData.rounds.length; i++) {
+          const roundMatches = newData.rounds[i].matches;
+          const foundIndex = roundMatches.findIndex(m => m.id === matchId);
+          if (foundIndex !== -1) {
+            targetRound = newData.rounds[i];
+            matchIndex = foundIndex;
+            targetRoundIndex = i;
+            break;
+          }
+        }
+      }
       
       if (matchIndex === -1) return prev;
       
-      const match = currentRound.matches[matchIndex];
+      const match = targetRound.matches[matchIndex];
+      
+      // Handle reversion case
+      if (winnerId === 'revert') {
+        console.log(`Reverting winner for match ${match.id}`);
+        
+        // Check if this match has fed teams to a next match
+        if (match.nextMatchId) {
+          // Find the next match
+          let nextMatch: Match | undefined;
+          let nextMatchRoundIndex = -1;
+          
+          for (let i = 0; i < newData.rounds.length; i++) {
+            const roundMatches = newData.rounds[i].matches;
+            const foundIndex = roundMatches.findIndex(m => m.id === match.nextMatchId);
+            if (foundIndex !== -1) {
+              nextMatch = roundMatches[foundIndex];
+              nextMatchRoundIndex = i;
+              break;
+            }
+          }
+          
+          if (nextMatch) {
+            // If the next match already has a winner, we can't revert this match
+            if (nextMatch.winner) {
+              console.log(`Cannot revert match ${match.id} because next match ${nextMatch.id} already has a winner`);
+              toast.error('Cannot revert this match', {
+                description: 'The next match already has a winner selected',
+              });
+              return prev;
+            }
+            
+            // Determine which team slot to clear in the next match
+            if (match.id.startsWith('match-3-')) {
+              // For semifinals feeding to finals
+              if (match.side === 'left') {
+                nextMatch.teamA = undefined;
+              } else if (match.side === 'right') {
+                nextMatch.teamB = undefined;
+              }
+            } else if (match.side === 'left') {
+              // Left side matches
+              const isEvenPosition = match.position % 2 === 0;
+              if (isEvenPosition) {
+                nextMatch.teamA = undefined;
+              } else {
+                nextMatch.teamB = undefined;
+              }
+            } else if (match.side === 'right') {
+              // Right side matches
+              const isEvenPosition = (match.position - 4) % 2 === 0; // Adjusted for right side
+              if (isEvenPosition) {
+                nextMatch.teamA = undefined;
+              } else {
+                nextMatch.teamB = undefined;
+              }
+            }
+            
+            console.log(`Cleared team in next match ${nextMatch.id}`);
+          }
+        }
+        
+        // Clear the winner
+        match.winner = undefined;
+        toast.info('Match result reverted', {
+          description: 'Please select a winner again',
+        });
+        
+        return newData;
+      }
+      
+      // Normal winner selection logic continues from here
       const winner = match.teamA?.id === winnerId 
         ? match.teamA 
         : match.teamB;
@@ -106,7 +192,8 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       }
       
-      // Check if current round is complete
+      // Check if current round is complete - only for the active round
+      const currentRound = newData.rounds[prev.currentRound];
       const isRoundComplete = currentRound.matches.every(m => m.winner);
       console.log(`Round ${prev.currentRound} complete: ${isRoundComplete}`);
       
