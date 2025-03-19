@@ -666,8 +666,8 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
           
           {/* SO black.png logo at the bottom */}
           <div className="flex justify-center z-10 pointer-events-auto mt-2">
-            <div className="w-[12%] min-w-[100px] max-w-[180px]">
-              <div style={{ position: 'relative', width: '100%', height: '100px' }}>
+            <div className="w-[20%] min-w-[150px] max-w-[250px]">
+              <div style={{ position: 'relative', width: '100%', height: '120px' }}>
                 <img 
                   src="/SO_transparent_fixed.png" 
                   alt="SO Logo" 

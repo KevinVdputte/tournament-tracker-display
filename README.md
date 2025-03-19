@@ -2,15 +2,13 @@
 
 A simple web application for tracking and displaying tournament brackets.
 
-![Tournament Bracket Display](https://example.com/screenshot.png)
-
 ## Quick Start for Non-Technical Users
 
 To get started quickly:
 
 1. **Windows Users**: Double-click the `start-app.bat` file
 2. **Mac Users**: Double-click the `start-app.sh` file (or run it from Terminal)
-3. Open your web browser and go to: http://localhost:5173
+3. Open your web browser and go to: http://localhost:8080
 
 For more detailed instructions, check the `GETTING-STARTED.html` file included with this application.
 
