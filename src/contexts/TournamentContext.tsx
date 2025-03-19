@@ -70,6 +70,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             
             // For semi-finals, ensure proper team assignment
             if (match.id.startsWith('match-3-')) {
+              console.log(`Processing semifinal match ${match.id} with side ${match.side}`);
               if (match.side === 'left') {
                 nextMatch.teamA = winner;
                 console.log(`Set teamA for final: ${winner.name}`);
@@ -120,28 +121,35 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           const leftSemiFinal = newData.rounds[2].matches.find(m => m.side === 'left');
           const rightSemiFinal = newData.rounds[2].matches.find(m => m.side === 'right');
           
+          console.log("Checking semifinal setup:", { 
+            leftSemiFinalId: leftSemiFinal?.id,
+            rightSemiFinalId: rightSemiFinal?.id
+          });
+          
           // Make sure semifinal teams are set
           if (leftSemiFinal && rightSemiFinal) {
-            if (!leftSemiFinal.teamA || !leftSemiFinal.teamB || !rightSemiFinal.teamA || !rightSemiFinal.teamB) {
-              // Find the second round winners that feed into semifinals
-              console.log("Fixing semifinal teams");
-              const leftWinners = secondRoundMatches
-                .filter(m => m.side === 'left' && m.winner)
-                .map(m => m.winner);
-              
-              const rightWinners = secondRoundMatches
-                .filter(m => m.side === 'right' && m.winner)
-                .map(m => m.winner);
-              
-              if (leftWinners.length >= 2) {
-                leftSemiFinal.teamA = leftWinners[0];
-                leftSemiFinal.teamB = leftWinners[1];
-              }
-              
-              if (rightWinners.length >= 2) {
-                rightSemiFinal.teamA = rightWinners[0];
-                rightSemiFinal.teamB = rightWinners[1];
-              }
+            const leftWinners = secondRoundMatches
+              .filter(m => m.side === 'left' && m.winner)
+              .map(m => m.winner);
+            
+            const rightWinners = secondRoundMatches
+              .filter(m => m.side === 'right' && m.winner)
+              .map(m => m.winner);
+
+            console.log("Left winners:", leftWinners.map(w => w?.name));
+            console.log("Right winners:", rightWinners.map(w => w?.name));
+            
+            // Always reassign teams to ensure they're correctly set
+            if (leftWinners.length >= 2) {
+              leftSemiFinal.teamA = leftWinners[0];
+              leftSemiFinal.teamB = leftWinners[1];
+              console.log(`Set left semifinal: ${leftWinners[0]?.name} vs ${leftWinners[1]?.name}`);
+            }
+            
+            if (rightWinners.length >= 2) {
+              rightSemiFinal.teamA = rightWinners[0];
+              rightSemiFinal.teamB = rightWinners[1];
+              console.log(`Set right semifinal: ${rightWinners[0]?.name} vs ${rightWinners[1]?.name}`);
             }
           }
           
@@ -162,12 +170,75 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           // Both semifinal matches are complete, update the final match
           const leftSemiFinal = semiFinalMatches.find(m => m.side === 'left');
           const rightSemiFinal = semiFinalMatches.find(m => m.side === 'right');
-          const finalMatch = newData.rounds[3].matches[0];
           
+          // Find the final match explicitly by ID in the appropriate round
+          const finalRound = newData.rounds.find(r => r.id === 3);
+          
+          // Get matches in the final round for debugging
+          console.log("Final round matches before update:", finalRound?.matches.map(m => ({
+            id: m.id,
+            side: m.side,
+            teamA: m.teamA?.name || 'None',
+            teamB: m.teamB?.name || 'None'
+          })));
+          
+          // Try multiple methods to find the final match
+          let finalMatch = finalRound?.matches.find(m => m.id === 'match-4-0');
+          
+          // If not found by ID, try alternative methods
+          if (!finalMatch && finalRound) {
+            // Try by position in array
+            if (finalRound.matches.length === 1) {
+              finalMatch = finalRound.matches[0];
+              console.log("Found final match as the only match in round:", finalMatch.id);
+            } 
+            // Try by side === 'center'
+            else {
+              const centerMatch = finalRound.matches.find(m => m.side === 'center');
+              if (centerMatch) {
+                finalMatch = centerMatch;
+                console.log("Found final match by center side:", centerMatch.id);
+              }
+            }
+          }
+          
+          // If still not found, add diagnostic info
+          if (!finalMatch) {
+            console.error("Could not find the final match!");
+            console.error("Available rounds:", newData.rounds.map(r => ({ 
+              id: r.id, 
+              name: r.name, 
+              matches: r.matches.map(m => m.id) 
+            })));
+            return prev; // Don't update if we can't find the final match
+          }
+          
+          // Debug log to check the semifinal winners
+          console.log("Left semifinal winner:", leftSemiFinal?.winner?.name);
+          console.log("Right semifinal winner:", rightSemiFinal?.winner?.name);
+          console.log("Final match before update:", {
+            id: finalMatch.id,
+            teamA: finalMatch.teamA?.name || 'None',
+            teamB: finalMatch.teamB?.name || 'None'
+          });
+          
+          // Ensure the final match has both teams even if the nextMatchId logic failed
           if (leftSemiFinal?.winner && rightSemiFinal?.winner) {
-            finalMatch.teamA = leftSemiFinal.winner;
-            finalMatch.teamB = rightSemiFinal.winner;
+            // Create fresh copies of the winners to avoid reference issues
+            finalMatch.teamA = JSON.parse(JSON.stringify(leftSemiFinal.winner));
+            finalMatch.teamB = JSON.parse(JSON.stringify(rightSemiFinal.winner));
+            finalMatch.winner = undefined; // Clear any previous winner
+            
             console.log(`Final match set up with ${finalMatch.teamA?.name} vs ${finalMatch.teamB?.name}`);
+            
+            // Verify the teams are set correctly
+            console.log("Final match after update:", {
+              teamA: finalMatch.teamA?.name,
+              teamB: finalMatch.teamB?.name,
+              hasTeamA: !!finalMatch.teamA,
+              hasTeamB: !!finalMatch.teamB
+            });
+            
             newData.currentRound = 3;
             
             toast.info(`Finals started`, {
@@ -179,22 +250,77 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // If it's the final round and complete, set tournament as complete
       else if (prev.currentRound === 3 && isRoundComplete) {
         console.log("Final round complete");
-        // Get the winner of the final match
-        const finalMatch = currentRound.matches.find(match => match.id === 'match-4-0');
+        
+        // Get all matches from round 3 (final round) to debug
+        const finalRound = newData.rounds.find(r => r.id === 3);
+        console.log("Final round matches:", finalRound?.matches.map(m => ({ 
+          id: m.id, 
+          teamA: m.teamA?.name || 'None', 
+          teamB: m.teamB?.name || 'None',
+          winner: m.winner?.name || 'None',
+          side: m.side 
+        })));
+        
+        // Attempt different ways to find the final match
+        let finalMatch = finalRound?.matches.find(match => match.id === 'match-4-0');
+        
+        // Fallback to other methods of finding the final match if the ID approach fails
+        if (!finalMatch && finalRound) {
+          // Try to find by being the only match in the final round
+          if (finalRound.matches.length === 1) {
+            finalMatch = finalRound.matches[0];
+            console.log("Found final match by being the only match in final round:", finalMatch.id);
+          }
+          // Try to find by side === 'center'
+          else {
+            const centerMatch = finalRound.matches.find(m => m.side === 'center');
+            if (centerMatch) {
+              finalMatch = centerMatch;
+              console.log("Found final match by side === 'center':", finalMatch.id);
+            }
+          }
+        }
+        
+        console.log("Final match for champion determination:", {
+          found: !!finalMatch,
+          id: finalMatch?.id || 'Not found',
+          hasWinner: !!finalMatch?.winner,
+          winnerName: finalMatch?.winner?.name || 'No winner',
+          winnerID: finalMatch?.winner?.id || 'No winner ID'
+        });
+        
         if (finalMatch && finalMatch.winner) {
-          // Set the champion in both tournament data and the champion round
+          // Set the champion in tournament data with detailed logging
           newData.isComplete = true;
-          newData.champion = finalMatch.winner;
+          
+          // Create a deep copy of the winner to ensure no reference issues
+          const championData = JSON.parse(JSON.stringify(finalMatch.winner));
+          newData.champion = championData;
+          
+          console.log("Setting tournament champion:", championData.name);
           
           // Also update the champion match in the last round
-          const championRound = newData.rounds[4]; // Last round
-          if (championRound && championRound.matches.length > 0) {
-            championRound.matches[0].teamA = finalMatch.winner;
-            championRound.matches[0].winner = finalMatch.winner;
-          }
+          const championRound = newData.rounds.find(r => r.id === 4); // Last round
+          console.log("Champion round:", {
+            found: !!championRound,
+            name: championRound?.name || 'Not found',
+            matchCount: championRound?.matches.length || 0
+          });
           
-          // Explicitly log to check the champion is set
-          console.log('Setting champion:', finalMatch.winner.name);
+          if (championRound && championRound.matches.length > 0) {
+            // Update the champion match with the same deep-copied data
+            championRound.matches[0].teamA = championData;
+            championRound.matches[0].winner = championData;
+            championRound.matches[0].teamB = undefined; // No opponent in champion display
+            
+            console.log("Updated champion round match:", {
+              id: championRound.matches[0].id,
+              teamA: championRound.matches[0].teamA?.name || 'None',
+              winner: championRound.matches[0].winner?.name || 'None'
+            });
+          } else {
+            console.warn("Could not update champion round - not found or no matches");
+          }
           
           // Move to the champion round
           newData.currentRound = 4;
@@ -203,6 +329,8 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           toast.success('Tournament complete!', {
             description: `${finalMatch.winner.name} is the champion!`,
           });
+        } else {
+          console.warn("Could not set champion: final match not found or has no winner");
         }
       }
       // For other rounds, just advance if complete

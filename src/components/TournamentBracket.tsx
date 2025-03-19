@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TournamentBracketProps, Match } from '@/types/tournament';
+import { TournamentBracketProps, Match, Team } from '@/types/tournament';
 import MatchCard from './MatchCard';
 import RoundHeader from './RoundHeader';
 import { Trophy } from 'lucide-react';
@@ -9,15 +9,77 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   onSelectWinner
 }) => {
   const [activeMatches, setActiveMatches] = useState<string[]>([]);
+  const [localFinalTeams, setLocalFinalTeams] = useState<{teamA?: Team, teamB?: Team} | null>(null);
 
   // Determine active matches whenever the tournament data changes
   useEffect(() => {
+    // Get matches from the current round
     const currentRoundMatches = tournamentData.rounds[tournamentData.currentRound]?.matches || [];
-    const newActiveMatches = currentRoundMatches
+    let newActiveMatches = currentRoundMatches
       .filter(match => match.teamA && match.teamB && !match.winner)
       .map(match => match.id);
     
+    // Always check if there's a final match that should be active
+    const finalRound = tournamentData.rounds.find(r => r.id === 3);
+    if (finalRound) {
+      const finalMatches = finalRound.matches
+        .filter(match => match.teamA && match.teamB && !match.winner)
+        .map(match => match.id);
+      
+      // Add final matches to the active matches if they're not already included
+      finalMatches.forEach(matchId => {
+        if (!newActiveMatches.includes(matchId)) {
+          newActiveMatches.push(matchId);
+        }
+      });
+      
+      if (finalMatches.length > 0) {
+        console.log("Active final matches:", finalMatches);
+      }
+    }
+    
+    // Log current state for debugging
+    console.log("Current round:", tournamentData.currentRound);
+    console.log("Active matches:", newActiveMatches);
+    
     setActiveMatches(newActiveMatches);
+  }, [tournamentData]);
+
+  // Check for semifinal winners and update the final match if needed
+  useEffect(() => {
+    // Find the semifinal matches
+    const semifinalRound = tournamentData.rounds.find(r => r.id === 2);
+    if (!semifinalRound) return;
+    
+    const leftSemifinal = semifinalRound.matches.find(m => m.side === 'left');
+    const rightSemifinal = semifinalRound.matches.find(m => m.side === 'right');
+    
+    // Find the final match
+    const finalRound = tournamentData.rounds.find(r => r.id === 3);
+    if (!finalRound || finalRound.matches.length === 0) return;
+    
+    const finalMatch = finalRound.matches[0];
+    
+    // If both semifinal winners exist but final match doesn't have teams set,
+    // update our local state to ensure the UI shows the finalists
+    if (leftSemifinal?.winner && rightSemifinal?.winner) {
+      const isFinalistsSetInMatch = finalMatch.teamA && finalMatch.teamB;
+      
+      if (!isFinalistsSetInMatch) {
+        console.log("Setting local final teams from semifinal winners:", {
+          teamA: leftSemifinal.winner?.name,
+          teamB: rightSemifinal.winner?.name
+        });
+        
+        setLocalFinalTeams({
+          teamA: leftSemifinal.winner,
+          teamB: rightSemifinal.winner
+        });
+      } else {
+        // If the final match already has teams set, clear our local state
+        setLocalFinalTeams(null);
+      }
+    }
   }, [tournamentData]);
 
   // Split rounds into left, center and right sections
@@ -36,13 +98,63 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
     }))
   });
 
-  // Find the final match to check for a winner
-  const finalMatch = tournamentData.rounds[3]?.matches?.find(m => m.id === 'match-4-0');
+  // Find the final match to check for a winner - use the round index dynamically
+  // Look in round 3 for the final match with id 'match-4-0'
+  const finalMatch = tournamentData.rounds.find(r => r.id === 3)?.matches?.find(m => m.id === 'match-4-0');
   const finalWinner = finalMatch?.winner;
 
-  // Find semifinal matches
-  const leftSemifinal = tournamentData.rounds[2]?.matches?.find(m => m.side === 'left');
-  const rightSemifinal = tournamentData.rounds[2]?.matches?.find(m => m.side === 'right');
+  // Debug logging for final match to troubleshoot
+  if (finalMatch) {
+    console.log("Final match found:", {
+      id: finalMatch.id,
+      hasTeamA: !!finalMatch.teamA,
+      hasTeamB: !!finalMatch.teamB,
+      teamAName: finalMatch.teamA?.name || 'None',
+      teamBName: finalMatch.teamB?.name || 'None',
+      winner: finalMatch.winner?.name || 'None'
+    });
+  } else {
+    console.log("No final match found in round 3 with id 'match-4-0'");
+    
+    // Log all rounds and their matches for debugging
+    tournamentData.rounds.forEach(round => {
+      console.log(`Round ${round.id} (${round.name}):`, 
+        round.matches.map(m => ({ id: m.id, teamA: m.teamA?.name, teamB: m.teamB?.name }))
+      );
+    });
+  }
+
+  // Find semifinal matches - look in round with id 2
+  const semifinalRound = tournamentData.rounds.find(r => r.id === 2);
+  const leftSemifinal = semifinalRound?.matches?.find(m => m.side === 'left');
+  const rightSemifinal = semifinalRound?.matches?.find(m => m.side === 'right');
+
+  // Check for semifinal winners and their connection to finals
+  if (leftSemifinal?.winner || rightSemifinal?.winner) {
+    console.log("Semifinal winners found:", {
+      leftWinner: leftSemifinal?.winner?.name || 'None',
+      rightWinner: rightSemifinal?.winner?.name || 'None',
+      leftNextMatchId: leftSemifinal?.nextMatchId || 'None',
+      rightNextMatchId: rightSemifinal?.nextMatchId || 'None'
+    });
+    
+    // Verify these winners are correctly assigned to the final match
+    const finalRound = tournamentData.rounds.find(r => r.id === 3);
+    const finalMatch = finalRound?.matches[0];
+    
+    if (finalMatch) {
+      console.log("Final match teams:", {
+        teamA: finalMatch.teamA?.name || 'None',
+        teamB: finalMatch.teamB?.name || 'None',
+        teamAId: finalMatch.teamA?.id || 'None',
+        teamBId: finalMatch.teamB?.id || 'None',
+        leftWinnerId: leftSemifinal?.winner?.id || 'None',
+        rightWinnerId: rightSemifinal?.winner?.id || 'None',
+        matchesLeftWinner: finalMatch.teamA?.id === leftSemifinal?.winner?.id,
+        matchesRightWinner: finalMatch.teamB?.id === rightSemifinal?.winner?.id
+      });
+    }
+  }
 
   // Check if the champion match is in the last round
   const championMatch = tournamentData.rounds[tournamentData.rounds.length - 1]?.matches[0];
@@ -51,19 +163,25 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   // Debug console logging
   console.log("Current Round:", tournamentData.currentRound);
   console.log("Left Semifinal:", leftSemifinal ? {
+    id: leftSemifinal.id,
     teamA: leftSemifinal.teamA?.name || 'None',
     teamB: leftSemifinal.teamB?.name || 'None',
     winner: leftSemifinal.winner?.name || 'None'
   } : 'None');
   console.log("Right Semifinal:", rightSemifinal ? {
+    id: rightSemifinal.id,
     teamA: rightSemifinal.teamA?.name || 'None',
     teamB: rightSemifinal.teamB?.name || 'None',
     winner: rightSemifinal.winner?.name || 'None'
   } : 'None');
   console.log("Final Match:", finalMatch ? {
+    id: finalMatch.id,
     teamA: finalMatch.teamA?.name || 'None',
     teamB: finalMatch.teamB?.name || 'None',
-    winner: finalMatch.winner?.name || 'None'
+    winner: finalMatch.winner?.name || 'None',
+    round: finalMatch.round,
+    position: finalMatch.position,
+    side: finalMatch.side
   } : 'None');
 
   if (finalWinner) {
@@ -73,6 +191,18 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
   if (championFromRound) {
     console.log('Champion from round:', championFromRound.name);
   }
+  
+  // Check if all rounds are properly set up
+  tournamentData.rounds.forEach((round, idx) => {
+    console.log(`Round ${idx} (ID: ${round.id}): ${round.name}`, {
+      matches: round.matches.length,
+      firstMatch: round.matches[0] ? {
+        id: round.matches[0].id,
+        teamA: round.matches[0].teamA?.name || 'None',
+        teamB: round.matches[0].teamB?.name || 'None'
+      } : 'No matches'
+    });
+  });
 
   return (
     <div className="w-full overflow-x-auto py-6">
@@ -137,18 +267,62 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
               />
               
               <div className="space-y-6 relative">
-                {finalRound.matches.map((match) => (
-                  <div 
-                    key={match.id}
-                    className="relative"
-                  >
-                    <MatchCard
-                      match={match}
-                      onSelectWinner={onSelectWinner}
-                      isActive={activeMatches.includes(match.id)}
-                    />
-                  </div>
-                ))}
+                {(() => {
+                  // Get the final round explicitly
+                  const finalsRound = tournamentData.rounds.find(r => r.id === 3);
+                  
+                  if (!finalsRound || finalsRound.matches.length === 0) {
+                    console.error("Finals round not found or has no matches");
+                    return null;
+                  }
+                  
+                  // Get the first (and should be only) match from the finals round
+                  const finalMatch = finalsRound.matches[0];
+                  
+                  // If we have local final teams but the match doesn't have teams set, use our local state
+                  const displayMatch = {
+                    ...finalMatch,
+                    teamA: finalMatch.teamA || localFinalTeams?.teamA,
+                    teamB: finalMatch.teamB || localFinalTeams?.teamB
+                  };
+                  
+                  console.log("Rendering final match:", {
+                    id: displayMatch.id,
+                    teamA: displayMatch.teamA?.name || 'None',
+                    teamB: displayMatch.teamB?.name || 'None',
+                    hasTeamA: !!displayMatch.teamA,
+                    hasTeamB: !!displayMatch.teamB,
+                    winner: displayMatch.winner?.name || 'None',
+                    usingLocalTeams: !finalMatch.teamA && !!localFinalTeams
+                  });
+                  
+                  // Check if the final match should be interactive
+                  const isInteractive = displayMatch.teamA && 
+                                        displayMatch.teamB && 
+                                        !displayMatch.winner && 
+                                        tournamentData.currentRound >= 3;
+                  
+                  return (
+                    <div key={displayMatch.id} className="relative">
+                      <MatchCard
+                        match={displayMatch}
+                        onSelectWinner={onSelectWinner}
+                        isActive={isInteractive}
+                      />
+                      {/* Add highlighted border if finalists are set */}
+                      {displayMatch.teamA && displayMatch.teamB && (
+                        <div 
+                          className="absolute inset-0 rounded-lg border-2 border-tournament-accent/50 pointer-events-none"
+                          style={{ 
+                            transform: 'scale(1.05)',
+                            opacity: 0.5,
+                            boxShadow: '0 0 15px rgba(var(--tournament-accent-rgb), 0.3)'
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -200,43 +374,69 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({
           </div>
         </div>
         
+        {/* Debug champion display */}
+        <div style={{ display: 'none' }}>
+          {(() => {
+            console.log("Champion display conditions:", {
+              hasTournamentChampion: !!tournamentData.champion,
+              hasChampionFromRound: !!championFromRound,
+              hasFinalWinner: !!finalWinner,
+              tournamentChampion: tournamentData.champion?.name || 'None',
+              championFromRound: championFromRound?.name || 'None',
+              finalWinnerName: finalWinner?.name || 'None',
+              finalMatchId: finalMatch?.id || 'No final match',
+              shouldShowChampion: !!(tournamentData.champion || championFromRound || finalWinner)
+            });
+            return null;
+          })()}
+        </div>
+        
         {/* Champion Display */}
-        {(tournamentData.champion || championFromRound || finalWinner) && (
-          <div className="flex justify-center mt-20">
-            <div className="text-center">
-              <div className="glass-panel shadow-lg p-4 rounded-lg mb-2">
-                {(() => {
-                  // Get the champion from various possible sources
-                  const champion = tournamentData.champion || 
-                                  championFromRound || 
-                                  finalWinner;
-                  
-                  if (!champion) {
-                    return (
-                      <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-tournament-accent/10 mb-2">
-                          <Trophy size={16} className="text-tournament-accent" />
-                        </div>
-                        <div className="font-bold text-lg">Determining Champion...</div>
-                      </div>
-                    );
-                  }
-                  
-                  // Display the champion's name
-                  return (
-                    <div className="flex flex-col items-center">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-tournament-accent/10 mb-2">
-                        <Trophy size={16} className="text-tournament-accent" />
-                      </div>
-                      <div className="font-bold text-lg">{champion.name}</div>
+        <div className="flex justify-center mt-20">
+          <div className="text-center">
+            <div className="glass-panel shadow-lg p-4 rounded-lg mb-2">
+              {(() => {
+                // Check multiple possible sources for the champion
+                const tournamentChampion = tournamentData.champion;
+                
+                // Find the final match to check for a winner
+                const finalRound = tournamentData.rounds.find(r => r.id === 3);
+                const finalMatch = finalRound?.matches[0];
+                const finalWinner = finalMatch?.winner;
+                
+                // Find the champion round match
+                const championRound = tournamentData.rounds.find(r => r.id === 4);
+                const championMatch = championRound?.matches[0];
+                const championFromMatch = championMatch?.teamA || championMatch?.winner;
+                
+                // Use the first available champion source
+                const champion = tournamentChampion || finalWinner || championFromMatch;
+                
+                console.log("Champion detection:", {
+                  hasTournamentChampion: !!tournamentChampion,
+                  hasFinalWinner: !!finalWinner, 
+                  hasChampionFromMatch: !!championFromMatch,
+                  tournamentChampionName: tournamentChampion?.name || 'None',
+                  finalWinnerName: finalWinner?.name || 'None',
+                  championFromMatchName: championFromMatch?.name || 'None',
+                  isDisplayingChampion: !!champion
+                });
+                
+                return (
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-tournament-accent/10 mb-2">
+                      <Trophy size={16} className="text-tournament-accent" />
                     </div>
-                  );
-                })()}
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Champion</div>
-              </div>
+                    <div className="font-bold text-lg">
+                      {champion ? champion.name : "Determining Champion..."}
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Champion</div>
             </div>
           </div>
-        )}
+        </div>
         
         {/* SO black.png logo at the bottom */}
         <div className="flex justify-center mt-12 mb-6">

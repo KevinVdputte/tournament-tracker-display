@@ -52,7 +52,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onStartTournament }) => {
       "Alpha Team", "Beta Squad", "Team Nova", "Quantum Force", "Nebula Group",
       "Fusion Team", "Enigma Squad", "Phoenix Group", "Stellar Team", "Omega Squad",
       "Team Apex", "Kronos Group", "Vector Team", "Eclipse Squad", "Matrix Team",
-      "SO black.png"
+      "Titan Force"
     ];
     
     // Shuffle the array
